@@ -1,3 +1,4 @@
+<!DOCTYPE html>
 <!--
 
   <div class="p-2">
@@ -20,6 +21,7 @@
     <meta charset="utf-8" name="theme-color" content="#3bca7d"/>
     <link rel="icon" href="https://i.imgur.com/uPiIzGJ.png">
     <link rel="stylesheet" href="mdb.free.min.css" />
+	<title>PAF</title>
 	<script language="JavaScript">
 <!--
 var TRange=null;
@@ -81,12 +83,15 @@ function topFunction() {
 	</div>
 </div>
 <div class="wyszukiwarka">
+	<div class="siur">
 	<form name="f1" action="" 
 		onSubmit="if(this.t1.value!=null && this.t1.value!='') findString(this.t1.value);return false">
-			<input type="text" name=t1 value="" size=20 autocomplete="off" onfocus="this.value=''" style="background-color:131f37;color:white;border:none;margin-bottom:3px">
-			<button type="submit" class="btn btn-primary"name=b1 data-mdb-ripple-init>WYSZUKAJ</button>
+			<input id="searchInput" placeholder="..." type="text" name=t1 value="" size=50 autocomplete="off" onfocus="this.value=''" style="background-color:#131f37;color:white;border:none;margin-bottom:3px;text-align:center">
+			<div id="suggestions"></div>
+			<button type="submit" id="wyszukaj" class="btn btn-primary"name=b1 data-mdb-ripple-init>WYSZUKAJ</button>
 	</form>
 	<button onclick="topFunction()" id="myBtn" title="powrut" class="btn btn-primary" data-mdb-ripple-init>Powrót</button> 
+	</div>
 </div>
 
 <div class="d-flex flex-row mb-3 flex-wrap" style="padding-top:100px;">
@@ -125,7 +130,7 @@ function topFunction() {
       <img src="https://i.imgur.com/WdW0hs8.jpeg"  alt="7 Krasnoludków: Historia jeszcze prawdziwsza: Las to za mało" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">7 Krasnoludków: Historia jeszcze prawdziwsza:</br>Las to za mało</h5>
+        <h5 class="card-title">7 Krasnoludków: Historia jeszcze prawdziwsza: Las to za mało</h5>
 		<h5 class="card-year">2006</h5>
         <p class="card-text"></p>
 		</div>
@@ -290,7 +295,7 @@ function topFunction() {
       <img src="https://i.imgur.com/G0Nyxh6.jpeg"  alt="Asterix podbija Amerykę" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Asterix</br>podbija Amerykę</h5>
+        <h5 class="card-title">Asterix podbija Amerykę</h5>
 		<h5 class="card-year">1994</h5>
         <p class="card-text"></p>
 		</div>
@@ -305,7 +310,7 @@ function topFunction() {
       <img src="https://i.imgur.com/GhcGMHu.jpeg"  alt="Asterix i Obelix kontra Cezar" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Asterix i Obelix</br>kontra Cezar</h5>
+        <h5 class="card-title">Asterix i Obelix kontra Cezar</h5>
 		<h5 class="card-year">1999</h5>
         <p class="card-text"></p>
 		</div>
@@ -320,7 +325,7 @@ function topFunction() {
       <img src="https://i.imgur.com/36kzMdu.jpeg"  alt="Asterix i Obelix Misja Kleopatra" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Asterix i Obelix</br>Misja Kleopatra</h5>
+        <h5 class="card-title">Asterix i Obelix Misja Kleopatra</h5>
 		<h5 class="card-year">2002</h5>
         <p class="card-text"></p>
 		</div>
@@ -365,7 +370,7 @@ function topFunction() {
       <img src="https://i.imgur.com/INrrLS4.jpeg"  alt="Asterix i Obelix: Imperium Smoka" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Asterix i Obelix:</br>Imperium Smoka</h5>
+        <h5 class="card-title">Asterix i Obelix: Imperium Smoka</h5>
 		<h5 class="card-year">2023</h5>
         <p class="card-text"></p>
 		</div>
@@ -425,7 +430,7 @@ function topFunction() {
       <img src="https://i.imgur.com/Vn1l49s.jpeg"  alt="Avatar: Legenda Aanga - Księga I - Woda" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Avatar:</br>Legenda Aanga</br>Księga I - Woda</h5>
+        <h5 class="card-title">Avatar: Legenda Aanga Księga I - Woda</h5>
 		<h5 class="card-year">2005</h5>
         <p class="card-text"></p>
 		</div>
@@ -440,7 +445,7 @@ function topFunction() {
       <img src="https://i.imgur.com/lw1zald.jpeg"  alt="Avatar: Legenda Aanga - Księga II - Ziemia" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Avatar:</br>Legenda Aanga</br>Księga II - Ziemia</h5>
+        <h5 class="card-title">Avatar: Legenda Aanga Księga II - Ziemia</h5>
 		<h5 class="card-year">2006</h5>
         <p class="card-text"></p>
 		</div>
@@ -455,7 +460,7 @@ function topFunction() {
       <img src="https://i.imgur.com/vhw1bMi.jpeg"  alt="Avatar: Legenda Aanga - Księga III - Ogień" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Avatar:</br>Legenda Aanga</br>Księga III - Ogień</h5>
+        <h5 class="card-title">Avatar: Legenda Aanga Księga III - Ogień</h5>
 		<h5 class="card-year">2007-2008</h5>
         <p class="card-text"></p>
 		</div>
@@ -470,7 +475,7 @@ function topFunction() {
       <img src="https://i.imgur.com/K7DavK1.jpeg"  alt="Avatar: Legenda Korry - Księga I Powietrze" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Avatar:</br>Legenda Korry</br>Księga I - Powietrze</h5>
+        <h5 class="card-title">Avatar: Legenda Korry Księga I - Powietrze</h5>
 		<h5 class="card-year">2012</h5>
         <p class="card-text"></p>
 		</div>
@@ -485,7 +490,7 @@ function topFunction() {
       <img src="https://i.imgur.com/kWfZA5c.jpeg"  alt="Avatar: Legenda Korry - Księga II Duchy" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Avatar:</br>Legenda Korry</br>Księga II - Duchy</h5>
+        <h5 class="card-title">Avatar: Legenda Korry Księga II - Duchy</h5>
 		<h5 class="card-year">2012</h5>
         <p class="card-text"></p>
 		</div>
@@ -500,7 +505,7 @@ function topFunction() {
       <img src="https://i.imgur.com/svqgwIx.jpeg"  alt="Avatar: Legenda Korry - Księga III Zmiana" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Avatar:</br>Legenda Korry</br>Księga III - Zmiana</h5>
+        <h5 class="card-title">Avatar: Legenda Korry Księga III - Zmiana</h5>
 		<h5 class="card-year">2014</h5>
         <p class="card-text"></p>
 		</div>
@@ -515,7 +520,7 @@ function topFunction() {
       <img src="https://i.imgur.com/5wDtmzT.jpeg"  alt="Avatar: Legenda Korry - Księga IV Równowaga" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Avatar:</br>Legenda Korry</br>Księga IV - Równowaga</h5>
+        <h5 class="card-title">Avatar: Legenda Korry Księga IV - Równowaga</h5>
 		<h5 class="card-year">2014</h5>
         <p class="card-text"></p>
 		</div>
@@ -545,7 +550,7 @@ function topFunction() {
       <img src="https://i.imgur.com/m1klOwG.jpeg"  alt="Bionicle 1" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bionicle<br>Maska Światła</h5>
+        <h5 class="card-title">Bionicle Maska Światła</h5>
 		<h5 class="card-year">2003</h5>
         <p class="card-text"></p>
 		</div>
@@ -560,7 +565,7 @@ function topFunction() {
       <img src="https://i.imgur.com/lB7Xfhi.jpeg"  alt="Bionicle 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bionicle 2<br>Legendy Metru Nui</h5>
+        <h5 class="card-title">Bionicle 2 Legendy Metru Nui</h5>
 		<h5 class="card-year">2004</h5>
         <p class="card-text"></p>
 		</div>
@@ -575,7 +580,7 @@ function topFunction() {
       <img src="https://i.imgur.com/otxxHvV.jpeg"  alt="Bionicle 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bionicle 3<br>W sieci mroku</h5>
+        <h5 class="card-title">Bionicle 3 W sieci mroku</h5>
 		<h5 class="card-year">2005</h5>
         <p class="card-text"></p>
 		</div>
@@ -590,7 +595,7 @@ function topFunction() {
       <img src="https://i.imgur.com/XJfpTjy.jpeg"  alt="Bionicle 4" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bionicle<br>Narodziny Legendy</h5>
+        <h5 class="card-title">Bionicle Narodziny Legendy</h5>
 		<h5 class="card-year">2009</h5>
         <p class="card-text"></p>
 		</div>
@@ -605,7 +610,7 @@ function topFunction() {
       <img src="https://i.imgur.com/bomlURk.jpeg"  alt="Bleach sezon 01" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bleach: Arc 01</br>Agent Shinigami</h5>
+        <h5 class="card-title">Bleach: Arc 01 Agent Shinigami</h5>
 		<h5 class="card-year">2004-2005</h5>
         <p class="card-text"></p>
 		</div>
@@ -620,7 +625,7 @@ function topFunction() {
       <img src="https://i.imgur.com/lAOI815.png"  alt="Bleach sezon 02" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bleach: Arc 02</br>Soul Society:</br>Wejście Donosiciela</h5>
+        <h5 class="card-title">Bleach: Arc 02 Soul Society: Wejście Donosiciela</h5>
 		<h5 class="card-year">2005</h5>
         <p class="card-text"></p>
 		</div>
@@ -635,7 +640,7 @@ function topFunction() {
       <img src="https://i.imgur.com/Axm7zLW.jpeg"  alt="Bleach sezon 03" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bleach: Arc 03</br>Soul Society:</br>Ratunek</h5>
+        <h5 class="card-title">Bleach: Arc 03 Soul Society: Ratunek</h5>
 		<h5 class="card-year">2005-2006</h5>
         <p class="card-text"></p>
 		</div>
@@ -650,7 +655,7 @@ function topFunction() {
       <img src="https://i.imgur.com/Z5guYRW.jpeg"  alt="Bleach sezon 06" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bleach: Arc 06</br>Arrancar: Przybycie</h5>
+        <h5 class="card-title">Bleach: Arc 06 Arrancar: Przybycie</h5>
 		<h5 class="card-year">2007</h5>
         <p class="card-text"></p>
 		</div>
@@ -665,7 +670,7 @@ function topFunction() {
       <img src="https://i.imgur.com/NW1dSoO.jpeg"  alt="Bleach sezon 07" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bleach: Arc 07</br>Arrancar: Wejście</br>do Hueco Mundo</h5>
+        <h5 class="card-title">Bleach: Arc 07 Arrancar: Wejście do Hueco Mundo</h5>
 		<h5 class="card-year">2007</h5>
         <p class="card-text"></p>
 		</div>
@@ -680,7 +685,7 @@ function topFunction() {
       <img src="https://i.imgur.com/HixmGd0.jpeg"  alt="Bleach sezon 08" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bleach: Arc 08</br>Arrancar: Zacięty Bój</h5>
+        <h5 class="card-title">Bleach: Arc 08 Arrancar: Zacięty Bój</h5>
 		<h5 class="card-year">2007</h5>
         <p class="card-text"></p>
 		</div>
@@ -695,7 +700,7 @@ function topFunction() {
       <img src="https://i.imgur.com/ZAg4XzH.jpeg"  alt="Bleach sezon 17" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bleach: Arc 17</br>Tysiącletnia krwawa Wojna</h5>
+        <h5 class="card-title">Bleach: Arc 17 Tysiącletnia krwawa Wojna</h5>
 		<h5 class="card-year">2022</h5>
         <p class="card-text"></p>
 		</div>
@@ -710,7 +715,7 @@ function topFunction() {
       <img src="https://i.imgur.com/TNnJ1Aa.jpeg"  alt="Bleach sezon 18" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Bleach: Arc 18</br>Tysiącletnia krwawa Wojna - Separacja</h5>
+        <h5 class="card-title">Bleach: Arc 18 Tysiącletnia krwawa Wojna - Separacja</h5>
 		<h5 class="card-year">2023</h5>
         <p class="card-text"></p>
 		</div>
@@ -755,7 +760,7 @@ function topFunction() {
       <img src="https://i.imgur.com/76UuTde.jpeg"  alt="Breaking Bad 1" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Breaking Bad</br>Sezon 1</h5>
+        <h5 class="card-title">Breaking Bad Sezon 1</h5>
 		<h5 class="card-year">2008</h5>
         <p class="card-text"></p>
 		</div>
@@ -770,7 +775,7 @@ function topFunction() {
       <img src="https://i.imgur.com/Wmp38rE.jpeg"  alt="Breaking Bad 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Breaking Bad</br>Sezon 2</h5>
+        <h5 class="card-title">Breaking Bad Sezon 2</h5>
 		<h5 class="card-year">2009</h5>
         <p class="card-text"></p>
 		</div>
@@ -785,7 +790,7 @@ function topFunction() {
       <img src="https://i.imgur.com/l8HRqw0.jpeg"  alt="Breaking Bad 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Breaking Bad</br>Sezon 3</h5>
+        <h5 class="card-title">Breaking Bad Sezon 3</h5>
 		<h5 class="card-year">2010</h5>
         <p class="card-text"></p>
 		</div>
@@ -800,7 +805,7 @@ function topFunction() {
       <img src="https://i.imgur.com/IimWXWV.jpeg"  alt="Breaking Bad 4" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Breaking Bad</br>Sezon 4</h5>
+        <h5 class="card-title">Breaking Bad Sezon 4</h5>
 		<h5 class="card-year">2011</h5>
         <p class="card-text"></p>
 		</div>
@@ -815,7 +820,7 @@ function topFunction() {
       <img src="https://i.imgur.com/GwmENeL.jpeg"  alt="Breaking Bad 5" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Breaking Bad</br>Sezon 5</h5>
+        <h5 class="card-title">Breaking Bad Sezon 5</h5>
 		<h5 class="card-year">2012-2013</h5>
         <p class="card-text"></p>
 		</div>
@@ -935,7 +940,7 @@ function topFunction() {
       <img src="https://i.imgur.com/pGVYf1R.jpeg"  alt="Czerwony Kapturek prawdziwa historia" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Czerwony Kapturek</br>Prawdziwa Historia</h5>
+        <h5 class="card-title">Czerwony Kapturek Prawdziwa Historia</h5>
 		<h5 class="card-year">2005</h5>
         <p class="card-text"></p>
 		</div>
@@ -950,7 +955,7 @@ function topFunction() {
       <img src="https://i.imgur.com/chTLEHC.jpeg"  alt="Kod Da Vinci" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Dan Brown</br>Kod Da Vinci</h5>
+        <h5 class="card-title">Dan Brown Kod Da Vinci</h5>
 		<h5 class="card-year">2006</h5>
         <p class="card-text"></p>
 		</div>
@@ -965,7 +970,7 @@ function topFunction() {
       <img src="https://i.imgur.com/23MsmCa.jpeg"  alt="Anioły i Demony" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Dan Brown</br>Anioły i Demony</h5>
+        <h5 class="card-title">Dan Brown Anioły i Demony</h5>
 		<h5 class="card-year">2009</h5>
         <p class="card-text"></p>
 		</div>
@@ -980,7 +985,7 @@ function topFunction() {
       <img src="https://i.imgur.com/9PFeSLs.jpeg"  alt="Inferno" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Dan Brown</br>Inferno</h5>
+        <h5 class="card-title">Dan Brown Inferno</h5>
 		<h5 class="card-year">2016</h5>
         <p class="card-text"></p>
 		</div>
@@ -1040,7 +1045,7 @@ function topFunction() {
       <img src="https://i.imgur.com/HkHW77G.jpeg"  alt="Demonzz1 Stream dekady" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Demonzz1</br>Stream dekady</h5>
+        <h5 class="card-title">Demonzz1 Stream dekady</h5>
 		<h5 class="card-year">2024</h5>
         <p class="card-text"></p>
 		</div>
@@ -1055,7 +1060,7 @@ function topFunction() {
       <img src="https://i.imgur.com/P5zItts.jpeg"  alt="Demonzz1 Urodzinowa noc odkupienia" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Demonzz1</br>Urodzinowa noc odkupienia</h5>
+        <h5 class="card-title">Demonzz1 Urodzinowa noc odkupienia</h5>
 		<h5 class="card-year">2024</h5>
         <p class="card-text"></p>
 		</div>
@@ -1175,7 +1180,7 @@ function topFunction() {
       <img src="https://i.imgur.com/05Bmedu.jpeg"  alt="Epoka Lodowcowa 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Epoka Lodowcowa 2<br>Odwilż</h5>
+        <h5 class="card-title">Epoka Lodowcowa 2 Odwilż</h5>
 		<h5 class="card-year">2006</h5>
         <p class="card-text"></p>
 		</div>
@@ -1190,7 +1195,7 @@ function topFunction() {
       <img src="https://i.imgur.com/TRmUT03.jpeg"  alt="Epoka Lodowcowa 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Epoka Lodowcowa 3<br>Era dinozaurów</h5>
+        <h5 class="card-title">Epoka Lodowcowa 3 Era dinozaurów</h5>
 		<h5 class="card-year">2009</h5>
         <p class="card-text"></p>
 		</div>
@@ -1205,7 +1210,7 @@ function topFunction() {
       <img src="https://i.imgur.com/LzHErYB.jpeg"  alt="Epoka Lodowcowa 4" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Epoka Lodowcowa 4<br>Wędrówka kontynentów</h5>
+        <h5 class="card-title">Epoka Lodowcowa 4 Wędrówka kontynentów</h5>
 		<h5 class="card-year">2012</h5>
         <p class="card-text"></p>
 		</div>
@@ -1220,7 +1225,7 @@ function topFunction() {
       <img src="https://i.imgur.com/0SwNOfB.jpeg"  alt="Epoka Lodowcowa 5" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Epoka Lodowcowa 5<br>Mocne uderzenie</h5>
+        <h5 class="card-title">Epoka Lodowcowa 5 Mocne uderzenie</h5>
 		<h5 class="card-year">2016</h5>
         <p class="card-text"></p>
 		</div>
@@ -1235,7 +1240,7 @@ function topFunction() {
       <img src="https://i.imgur.com/NxHgYLh.jpeg"  alt="Epoka Lodowcowa Przygody dzikiego Bucka" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Epoka Lodowcowa<br>Przygody dzikiego Bucka</h5>
+        <h5 class="card-title">Epoka Lodowcowa Przygody dzikiego Bucka</h5>
 		<h5 class="card-year">2022</h5>
         <p class="card-text"></p>
 		</div>
@@ -1280,7 +1285,7 @@ function topFunction() {
       <img src="https://i.imgur.com/iQvqhsh.jpeg"  alt="Fantasy Bishoujo Juniku Ojisan to" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Fantasy Bishoujo</br>Juniku Ojisan to</h5>
+        <h5 class="card-title">Fantasy Bishoujo Juniku Ojisan to</h5>
 		<h5 class="card-year">2022</h5>
         <p class="card-text"></p>
 		</div>
@@ -1310,7 +1315,7 @@ function topFunction() {
       <img src="https://i.imgur.com/EHybdRK.jpeg"  alt="Fate Carnival Phantasm" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Fate</br>Carnival Phantasm</h5>
+        <h5 class="card-title">Fate Carnival Phantasm</h5>
 		<h5 class="card-year">2011</h5>
         <p class="card-text"></p>
 		</div>
@@ -1340,7 +1345,7 @@ function topFunction() {
       <img src="https://i.imgur.com/lFXlmEn.jpeg"  alt="Ferrari: Wyścig po nieśmiertelność" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Ferrari:</br>Wyścig po nieśmiertelność</h5>
+        <h5 class="card-title">Ferrari: Wyścig po nieśmiertelność</h5>
 		<h5 class="card-year">2017</h5>
         <p class="card-text"></p>
 		</div>
@@ -1370,7 +1375,7 @@ function topFunction() {
       <img src="https://i.imgur.com/M6EAxfV.jpeg"  alt="FilthyFrank's Cake Trilogy" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">FilthyFrank</br>The Cake Trilogy</h5>
+        <h5 class="card-title">FilthyFrank The Cake Trilogy</h5>
 		<h5 class="card-year">2015-2016</h5>
         <p class="card-text"></p>
 		</div>
@@ -1400,7 +1405,7 @@ function topFunction() {
       <img src="https://i.imgur.com/0XXgwpR.jpeg"  alt="Fullmetal Alchemist Brotherhood" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Fullmetal Alchemist</br>Brotherhood</h5>
+        <h5 class="card-title">Fullmetal Alchemist Brotherhood</h5>
 		<h5 class="card-year">2009-2010</h5>
         <p class="card-text"></p>
 		</div>
@@ -1460,7 +1465,7 @@ function topFunction() {
       <img src="https://i.imgur.com/HhvPnIj.jpeg"  alt="Goblin Slayer Goblins Crown" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Goblin Slayer</br>Goblin's Crown</h5>
+        <h5 class="card-title">Goblin Slayer Goblin`s Crown</h5>
 		<h5 class="card-year">2020</h5>
         <p class="card-text"></p>
 		</div>
@@ -1490,7 +1495,7 @@ function topFunction() {
       <img src="https://i.imgur.com/PzjiEX8.jpeg"  alt="Godzilla i Kong: Nowe Imperium" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Godzilla i Kong:</br>Nowe Imperium</h5>
+        <h5 class="card-title">Godzilla i Kong: Nowe Imperium</h5>
 		<h5 class="card-year">2024</h5>
         <p class="card-text"></p>
 		</div>
@@ -1505,7 +1510,7 @@ function topFunction() {
       <img src="https://i.imgur.com/YpACdYA.jpeg"  alt="Godzilla Minus One" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Godzilla:</br>Minus One</h5>
+        <h5 class="card-title">Godzilla: Minus One</h5>
 		<h5 class="card-year">2023</h5>
         <p class="card-text"></p>
 		</div>
@@ -1520,7 +1525,7 @@ function topFunction() {
       <img src="https://i.imgur.com/YIzVjMa.jpeg"  alt="Gothic Prawdziwa Historia" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gothic</br>Prawdziwa Historia</h5>
+        <h5 class="card-title">Gothic Prawdziwa Historia</h5>
 		<h5 class="card-year">2007</h5>
         <p class="card-text"></p>
 		</div>
@@ -1535,7 +1540,7 @@ function topFunction() {
       <img src="https://i.imgur.com/JEHz6sx.jpeg"  alt="Gothic Prawdziwa Historia Kontynuacja Alternatywna" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gothic</br>Prawdziwa Historia</br>Kontynuacja Alternatywna</h5>
+        <h5 class="card-title">Gothic Prawdziwa Historia Kontynuacja Alternatywna</h5>
 		<h5 class="card-year">2010</h5>
         <p class="card-text"></p>
 		</div>
@@ -1550,7 +1555,7 @@ function topFunction() {
       <img src="https://i.imgur.com/oPie5Pr.jpeg"  alt="Gothic Prawdziwa Historia" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gothic</br>Prawdziwa Historia</br>Remake</h5>
+        <h5 class="card-title">Gothic Prawdziwa Historia Remake</h5>
 		<h5 class="card-year">2022</h5>
         <p class="card-text"></p>
 		</div>
@@ -1595,7 +1600,7 @@ function topFunction() {
       <img src="https://i.imgur.com/lD7FJJl.jpeg"  alt="Gucio GTArp 1" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gucio GTA RP</br>Seria 1</h5>
+        <h5 class="card-title">Gucio GTA RP Seria 1</h5>
 		<h5 class="card-year">2018</h5>
         <p class="card-text"></p>
 		</div>
@@ -1610,7 +1615,7 @@ function topFunction() {
       <img src="https://i.imgur.com/lD7FJJl.jpeg"  alt="Gucio GTArp 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gucio GTA RP</br>Seria 2</h5>
+        <h5 class="card-title">Gucio GTA RP Seria 2</h5>
 		<h5 class="card-year">2021</h5>
         <p class="card-text"></p>
 		</div>
@@ -1625,7 +1630,7 @@ function topFunction() {
       <img src="https://i.imgur.com/42keXWb.jpeg"  alt="starwars phantom menace" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gwiezdne Wojny I</br>Mroczne widmo</h5>
+        <h5 class="card-title">Gwiezdne Wojny I Mroczne widmo</h5>
 		<h5 class="card-year">1999</h5>
         <p class="card-text"></p>
 		</div>
@@ -1640,7 +1645,7 @@ function topFunction() {
       <img src="https://i.imgur.com/ckfbjPW.jpeg"  alt="starwars attack of the clones" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gwiezdne Wojny II</br>Atak Klonów</h5>
+        <h5 class="card-title">Gwiezdne Wojny II Atak Klonów</h5>
 		<h5 class="card-year">2002</h5>
         <p class="card-text"></p>
 		</div>
@@ -1655,7 +1660,7 @@ function topFunction() {
       <img src="https://i.imgur.com/Rz8vY55.jpeg"  alt="starwars revenge of the sith" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gwiezdne Wojny III</br>Zemsta Sithów</h5>
+        <h5 class="card-title">Gwiezdne Wojny III Zemsta Sithów</h5>
 		<h5 class="card-year">2005</h5>
         <p class="card-text"></p>
 		</div>
@@ -1670,7 +1675,7 @@ function topFunction() {
       <img src="https://i.imgur.com/n9v6feN.jpeg"  alt="starwars the new hope" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gwiezdne Wojny IV</br>Nowa nadzieja</h5>
+        <h5 class="card-title">Gwiezdne Wojny IV Nowa nadzieja</h5>
 		<h5 class="card-year">1977</h5>
         <p class="card-text"></p>
 		</div>
@@ -1685,7 +1690,7 @@ function topFunction() {
       <img src="https://i.imgur.com/mscjpIO.jpeg"  alt="starwars empire strikes back" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gwiezdne Wojny V</br>Imperium Kontraatakuje</h5>
+        <h5 class="card-title">Gwiezdne Wojny V Imperium Kontraatakuje</h5>
 		<h5 class="card-year">1980</h5>
         <p class="card-text"></p>
 		</div>
@@ -1700,7 +1705,7 @@ function topFunction() {
       <img src="https://i.imgur.com/4mS2o2T.jpeg"  alt="starwars return of the jedi" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gwiezdne Wojny VI</br>Powrót Jedi</h5>
+        <h5 class="card-title">Gwiezdne Wojny VI Powrót Jedi</h5>
 		<h5 class="card-year">1983</h5>
         <p class="card-text"></p>
 		</div>
@@ -1715,7 +1720,7 @@ function topFunction() {
       <img src="https://i.imgur.com/suIidzu.jpeg"  alt="starwars rogue one" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gwiezdne Wojny Historie</br>Łotr 1</h5>
+        <h5 class="card-title">Gwiezdne Wojny Historie Łotr 1</h5>
 		<h5 class="card-year">2016</h5>
         <p class="card-text"></p>
 		</div>
@@ -1730,7 +1735,7 @@ function topFunction() {
       <img src="https://i.imgur.com/VTGvalT.jpeg"  alt="starwars han solo" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Gwiezdne Wojny Historie</br>Han Solo</h5>
+        <h5 class="card-title">Gwiezdne Wojny Historie Han Solo</h5>
 		<h5 class="card-year">2018</h5>
         <p class="card-text"></p>
 		</div>
@@ -1775,7 +1780,7 @@ function topFunction() {
       <img src="https://i.imgur.com/JfHuIs0.jpeg"  alt="Hellboy 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Hellboy II</br>Złota Armia</h5>
+        <h5 class="card-title">Hellboy II Złota Armia</h5>
 		<h5 class="card-year">2008</h5>
         <p class="card-text"></p>
 		</div>
@@ -1880,7 +1885,7 @@ function topFunction() {
       <img src="https://i.imgur.com/qxrDv6y.jpeg"  alt="Jigokuraku: Hell's Paradise" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Jigokuraku</br>Hell's Paradise</h5>
+        <h5 class="card-title">Jigokuraku Hell`s Paradise</h5>
 		<h5 class="card-year">2023</h5>
         <p class="card-text"></p>
 		</div>
@@ -1895,7 +1900,7 @@ function topFunction() {
       <img src="https://i.imgur.com/BRgRi1O.jpeg"  alt="Job czyli ostatnia szara komórka" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Job</br>Czyli ostatnia szara komórka</h5>
+        <h5 class="card-title">Job Czyli ostatnia szara komórka</h5>
 		<h5 class="card-year">2006</h5>
         <p class="card-text"></p>
 		</div>
@@ -1910,7 +1915,7 @@ function topFunction() {
       <img src="https://i.imgur.com/2bvznnj.jpeg"  alt="Jojo's Bizarre Adventure" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Jojo's Bizarre Adventure</h5>
+        <h5 class="card-title">Jojo`s Bizarre Adventure</h5>
 		<h5 class="card-year">2012-2013</h5>
         <p class="card-text"></p>
 		</div>
@@ -1940,7 +1945,7 @@ function topFunction() {
       <img src="https://i.imgur.com/rOCwvhU.jpeg"  alt="Jujutsu Kaisen Zero" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Jujutsu Kaisen</br>Zero</h5>
+        <h5 class="card-title">Jujutsu Kaisen Zero</h5>
 		<h5 class="card-year">2021</h5>
         <p class="card-text"></p>
 		</div>
@@ -1970,7 +1975,7 @@ function topFunction() {
       <img src="https://i.imgur.com/NGh29zV.jpeg"  alt="Kaguya-Sama Love is War" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kaguya-Sama</br>Love is War</h5>
+        <h5 class="card-title">Kaguya-Sama Love is War</h5>
 		<h5 class="card-year">2019</h5>
         <p class="card-text"></p>
 		</div>
@@ -1985,7 +1990,7 @@ function topFunction() {
       <img src="https://i.imgur.com/4WNT4rp.jpeg"  alt="Kaguya-Sama Love is War 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kaguya-Sama</br>Love is War 2</h5>
+        <h5 class="card-title">Kaguya-Sama Love is War 2</h5>
 		<h5 class="card-year">2020</h5>
         <p class="card-text"></p>
 		</div>
@@ -2000,7 +2005,7 @@ function topFunction() {
       <img src="https://i.imgur.com/nbbxcNm.jpeg"  alt="Kaguya-Sama Love is War 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kaguya-Sama</br>Love is War </br>Ultra Romantic</h5>
+        <h5 class="card-title">Kaguya-Sama Love is War  Ultra Romantic</h5>
 		<h5 class="card-year">2022</h5>
         <p class="card-text"></p>
 		</div>
@@ -2030,7 +2035,7 @@ function topFunction() {
       <img src="https://i.imgur.com/XVrHpEr.jpeg"  alt="Kapitan Bomba Laserowy Gniew Dzidy" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kapitan Bomba</br>Laserowy<br>Gniew Dzidy</h5>
+        <h5 class="card-title">Kapitan Bomba Laserowy Gniew Dzidy</h5>
 		<h5 class="card-year">2011-2012</h5>
         <p class="card-text"></p>
 		</div>
@@ -2045,7 +2050,7 @@ function topFunction() {
       <img src="https://i.imgur.com/yN8fJnh.jpeg"  alt="Kapitan Bomba Kutapokalipsa" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kapitan Bomba</br>Kutapokalipsa</h5>
+        <h5 class="card-title">Kapitan Bomba Kutapokalipsa</h5>
 		<h5 class="card-year">2012</h5>
         <p class="card-text"></p>
 		</div>
@@ -2060,7 +2065,7 @@ function topFunction() {
       <img src="https://i.imgur.com/rDlHUBX.jpeg"  alt="Kapitan Bomba Zemsta Faraona" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kapitan Bomba</br>Zemsta Faraona</h5>
+        <h5 class="card-title">Kapitan Bomba Zemsta Faraona</h5>
 		<h5 class="card-year">2012</h5>
         <p class="card-text"></p>
 		</div>
@@ -2105,7 +2110,7 @@ function topFunction() {
       <img src="https://i.imgur.com/7gl4CMR.jpeg"  alt="Klopsiki i inne zjawiska pogodowe" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Klopsiki i inne<br>zjawiska pogodowe</h5>
+        <h5 class="card-title">Klopsiki i inne zjawiska pogodowe</h5>
 		<h5 class="card-year">2009</h5>
         <p class="card-text"></p>
 		</div>
@@ -2120,7 +2125,7 @@ function topFunction() {
       <img src="https://i.imgur.com/KKHVONI.jpeg"  alt="Kono Subarashii Sekai ni Shukufuku wo!" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kono Subarashii Sekai</br>ni Shukufuku wo!</h5>
+        <h5 class="card-title">Kono Subarashii Sekai ni Shukufuku wo!</h5>
 		<h5 class="card-year">2016</h5>
         <p class="card-text"></p>
 		</div>
@@ -2135,7 +2140,7 @@ function topFunction() {
       <img src="https://i.imgur.com/a3Mq92p.jpeg"  alt="Kono Subarashii Sekai ni Shukufuku wo! 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kono Subarashii Sekai</br>ni Shukufuku wo! 2</h5>
+        <h5 class="card-title">Kono Subarashii Sekai ni Shukufuku wo! 2</h5>
 		<h5 class="card-year">2017</h5>
         <p class="card-text"></p>
 		</div>
@@ -2150,7 +2155,7 @@ function topFunction() {
       <img src="https://i.imgur.com/FHIp0Ay.jpeg"  alt="Kono Subarashii Sekai ni Shukufuku wo! Kurenai Densetsu" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kono Subarashii Sekai</br>ni Shukufuku wo!</br>Kurenai Densetsu</h5>
+        <h5 class="card-title">Kono Subarashii Sekai ni Shukufuku wo! Kurenai Densetsu</h5>
 		<h5 class="card-year">2019</h5>
         <p class="card-text"></p>
 		</div>
@@ -2165,7 +2170,7 @@ function topFunction() {
       <img src="https://i.imgur.com/LmRXGB6.jpeg"  alt="Kono Subarashii Sekai ni Shukufuku wo! 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kono Subarashii Sekai</br>ni Shukufuku wo! 3</h5>
+        <h5 class="card-title">Kono Subarashii Sekai ni Shukufuku wo! 3</h5>
 		<h5 class="card-year">2024</h5>
         <p class="card-text"></p>
 		</div>
@@ -2180,7 +2185,7 @@ function topFunction() {
       <img src="https://i.imgur.com/DJGaYsI.jpeg"  alt="Konosuba Kono Subarashii Sekai ni Bakuen o!" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kono Subarashii Sekai</br>ni Bakuen wo!</h5>
+        <h5 class="card-title">Kono Subarashii Sekai ni Bakuen wo!</h5>
 		<h5 class="card-year">2023</h5>
         <p class="card-text"></p>
 		</div>
@@ -2195,7 +2200,7 @@ function topFunction() {
       <img src="https://i.imgur.com/HBLRGT2.jpeg"  alt="Coraline" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Koralina</br>i tajemnicze drzwi</h5>
+        <h5 class="card-title">Koralina i tajemnicze drzwi</h5>
 		<h5 class="card-year">2009</h5>
         <p class="card-text"></p>
 		</div>
@@ -2225,7 +2230,7 @@ function topFunction() {
       <img src="https://i.imgur.com/LWOkNkB.jpeg"  alt="Kot w butach Ostatnie Życzenie" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kot w Butach:</br>Ostatnie Życzenie</h5>
+        <h5 class="card-title">Kot w Butach: Ostatnie Życzenie</h5>
 		<h5 class="card-year">2022</h5>
         <p class="card-text"></p>
 		</div>
@@ -2240,7 +2245,7 @@ function topFunction() {
       <img src="https://i.imgur.com/K9IV284.jpeg"  alt="Kryptonim Klan Na Drzewie Sezon 1" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kryptonim:</br>Klan Na Drzewie</br>Sezon 1</h5>
+        <h5 class="card-title">Kryptonim: Klan Na Drzewie Sezon 1</h5>
 		<h5 class="card-year">2002</h5>
         <p class="card-text"></p>
 		</div>
@@ -2255,7 +2260,7 @@ function topFunction() {
       <img src="https://i.imgur.com/Kqo2pSq.jpeg"  alt="Kryptonim Klan Na Drzewie Sezon 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kryptonim:</br>Klan Na Drzewie</br>Sezon 2</h5>
+        <h5 class="card-title">Kryptonim: Klan Na Drzewie Sezon 2</h5>
 		<h5 class="card-year">2003-2004</h5>
         <p class="card-text"></p>
 		</div>
@@ -2270,7 +2275,7 @@ function topFunction() {
       <img src="https://i.imgur.com/F1PriME.jpeg"  alt="Kryptonim Klan Na Drzewie Sezon 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kryptonim:</br>Klan Na Drzewie</br>Sezon 3</h5>
+        <h5 class="card-title">Kryptonim: Klan Na Drzewie Sezon 3</h5>
 		<h5 class="card-year">2004</h5>
         <p class="card-text"></p>
 		</div>
@@ -2285,7 +2290,7 @@ function topFunction() {
       <img src="https://i.imgur.com/QQA4OPq.jpeg"  alt="Kryptonim Klan Na Drzewie Sezon 4" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kryptonim:</br>Klan Na Drzewie</br>Sezon 4</h5>
+        <h5 class="card-title">Kryptonim: Klan Na Drzewie Sezon 4</h5>
 		<h5 class="card-year">2004-2005</h5>
         <p class="card-text"></p>
 		</div>
@@ -2300,7 +2305,7 @@ function topFunction() {
       <img src="https://i.imgur.com/Rp4fnr9.jpeg"  alt="Kryptonim Klan Na Drzewie Sezon 5" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kryptonim:</br>Klan Na Drzewie</br>Sezon 5</h5>
+        <h5 class="card-title">Kryptonim: Klan Na Drzewie Sezon 5</h5>
 		<h5 class="card-year">2005-2006</h5>
         <p class="card-text"></p>
 		</div>
@@ -2315,7 +2320,7 @@ function topFunction() {
       <img src="https://i.imgur.com/gH9Bqir.jpeg"  alt="Kryptonim Klan Na Drzewie Sezon 6" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Kryptonim:</br>Klan Na Drzewie</br>Sezon 6</h5>
+        <h5 class="card-title">Kryptonim: Klan Na Drzewie Sezon 6</h5>
 		<h5 class="card-year">2006-2007</h5>
         <p class="card-text"></p>
 		</div>
@@ -2420,7 +2425,7 @@ function topFunction() {
       <img src="https://i.imgur.com/K5JYlua.jpeg"  alt="Lamborghini: Człowiek, który stworzył legendę" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Lamborghini:</br>Człowiek, który stworzył legendę</h5>
+        <h5 class="card-title">Lamborghini: Człowiek, który stworzył legendę</h5>
 		<h5 class="card-year">2022</h5>
         <p class="card-text"></p>
 		</div>
@@ -2435,7 +2440,7 @@ function topFunction() {
       <img src="https://i.imgur.com/N7fIYDO.jpeg"  alt="Le Mans '66 - Ferrari vs Ford" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Le Mans '66</br>Ferrari vs Ford</h5>
+        <h5 class="card-title">Le Mans `66 Ferrari vs Ford</h5>
 		<h5 class="card-year">2019</h5>
         <p class="card-text"></p>
 		</div>
@@ -2450,7 +2455,7 @@ function topFunction() {
       <img src="https://i.imgur.com/UZvyykO.jpeg"  alt="Liga niezwykłych dżentelmenów" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Liga niezwykłych</br>dżentelmenów</h5>
+        <h5 class="card-title">Liga niezwykłych dżentelmenów</h5>
 		<h5 class="card-year">2003</h5>
         <p class="card-text"></p>
 		</div>
@@ -2480,7 +2485,7 @@ function topFunction() {
       <img src="https://i.imgur.com/eGttjZ8.jpeg"  alt="Lilo i Stich 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Lilo i Stich 2 </br>Mały feler Stitcha</h5>
+        <h5 class="card-title">Lilo i Stich 2  Mały feler Stitcha</h5>
 		<h5 class="card-year">2005</h5>
         <p class="card-text"></p>
 		</div>
@@ -2510,7 +2515,7 @@ function topFunction() {
       <img src="https://i.imgur.com/OxuTOrp.jpeg"  alt="Made in Abyss Dawn of The Deep Soul" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Made in Abyss</br>Dawn of</br>The Deep Soul</h5>
+        <h5 class="card-title">Made in Abyss Dawn of The Deep Soul</h5>
 		<h5 class="card-year">2020</h5>
         <p class="card-text"></p>
 		</div>
@@ -2525,7 +2530,7 @@ function topFunction() {
       <img src="https://i.imgur.com/fRRNawn.jpeg"  alt="Made in Abyss season 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Made in Abyss 2</br>The Golden City</br>of the Scorching Sun</h5>
+        <h5 class="card-title">Made in Abyss 2 The Golden City of the Scorching Sun</h5>
 		<h5 class="card-year">2022</h5>
         <p class="card-text"></p>
 		</div>
@@ -2675,7 +2680,7 @@ function topFunction() {
       <img src="https://i.imgur.com/uBwhFCo.jpeg"  alt="Mushoku Tensei Part 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Mushoku Tensei</br>Part 2</h5>
+        <h5 class="card-title">Mushoku Tensei Part 2</h5>
 		<h5 class="card-year">2021</h5>
         <p class="card-text"></p>
 		</div>
@@ -2705,7 +2710,7 @@ function topFunction() {
       <img src="https://i.imgur.com/pSWcHqc.jpeg"  alt="Mushoku Tensei 2 Part 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Mushoku Tensei 2</br>Part 2</h5>
+        <h5 class="card-title">Mushoku Tensei 2 Part 2</h5>
 		<h5 class="card-year">2024</h5>
         <p class="card-text"></p>
 		</div>
@@ -2750,7 +2755,7 @@ function topFunction() {
       <img src="https://i.imgur.com/KjB5H6E.jpeg"  alt="Nekopara OVA Extra" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Nekopara OVA</br>Koneko no Hi no Yakusoku</h5>
+        <h5 class="card-title">Nekopara OVA Koneko no Hi no Yakusoku</h5>
 		<h5 class="card-year">2018</h5>
         <p class="card-text"></p>
 		</div>
@@ -2810,7 +2815,7 @@ function topFunction() {
       <img src="https://i.imgur.com/qdpudfi.png"  alt="No Game No Life Zero" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">No Game No Life<br>Zero</h5>
+        <h5 class="card-title">No Game No Life Zero</h5>
 		<h5 class="card-year">2017</h5>
         <p class="card-text"></p>
 		</div>
@@ -2960,7 +2965,7 @@ function topFunction() {
       <img src="https://i.imgur.com/vq670ch.jpeg"  alt="Panty & Stocking with Garterbelt" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Panty & Stocking</br>with Garterbelt</h5>
+        <h5 class="card-title">Panty & Stocking with Garterbelt</h5>
 		<h5 class="card-year">2010</h5>
         <p class="card-text"></p>
 		</div>
@@ -2990,7 +2995,7 @@ function topFunction() {
       <img src="https://i.imgur.com/nlC2eh8.jpeg"  alt="Piraci z Karaibów 1 Klątwa Czarnej Perły" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Piraci z Karaibów</br>Klątwa Czarnej Perły</h5>
+        <h5 class="card-title">Piraci z Karaibów Klątwa Czarnej Perły</h5>
 		<h5 class="card-year">2003</h5>
         <p class="card-text"></p>
 		</div>
@@ -3005,7 +3010,7 @@ function topFunction() {
       <img src="https://i.imgur.com/4tifH0U.jpeg"  alt="Piraci z Karaibów 2 Skrzynia Umarlaka" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Piraci z Karaibów</br>Skrzynia Umarlaka</h5>
+        <h5 class="card-title">Piraci z Karaibów Skrzynia Umarlaka</h5>
 		<h5 class="card-year">2006</h5>
         <p class="card-text"></p>
 		</div>
@@ -3020,7 +3025,7 @@ function topFunction() {
       <img src="https://i.imgur.com/ZsgKAxS.jpeg"  alt="Piraci z Karaibów 3 Na krańcu świata" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Piraci z Karaibów</br>Na krańcu świata</h5>
+        <h5 class="card-title">Piraci z Karaibów Na krańcu świata</h5>
 		<h5 class="card-year">2007</h5>
         <p class="card-text"></p>
 		</div>
@@ -3035,7 +3040,7 @@ function topFunction() {
       <img src="https://i.imgur.com/eWdwpB6.jpeg"  alt="Piraci z Karaibów 4 Na nieznanych wodach" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Piraci z Karaibów</br>Na nieznanych wodach</h5>
+        <h5 class="card-title">Piraci z Karaibów Na nieznanych wodach</h5>
 		<h5 class="card-year">2011</h5>
         <p class="card-text"></p>
 		</div>
@@ -3050,7 +3055,7 @@ function topFunction() {
       <img src="https://i.imgur.com/riyuIWI.jpeg"  alt="Piraci z Karaibów 5 Zemsta Salazara" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Piraci z Karaibów</br>Zemsta Salazara</h5>
+        <h5 class="card-title">Piraci z Karaibów Zemsta Salazara</h5>
 		<h5 class="card-year">2017</h5>
         <p class="card-text"></p>
 		</div>
@@ -3125,7 +3130,7 @@ function topFunction() {
       <img src="https://i.imgur.com/dJUwdI6.jpeg"  alt="Uniwersytet Potworny" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Potwory i spółka</br>Uniwersytet Potworny</h5>
+        <h5 class="card-title">Potwory i spółka Uniwersytet Potworny</h5>
 		<h5 class="card-year">2013</h5>
         <p class="card-text"></p>
 		</div>
@@ -3200,7 +3205,7 @@ function topFunction() {
       <img src="https://i.imgur.com/7lYaQ3N.jpeg"  alt="Ralph Demolka 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Ralph Demolka</br>w internecie</h5>
+        <h5 class="card-title">Ralph Demolka w internecie</h5>
 		<h5 class="card-year">2018</h5>
         <p class="card-text"></p>
 		</div>
@@ -3230,7 +3235,7 @@ function topFunction() {
       <img src="https://i.imgur.com/e8hj9Ow.jpeg"  alt="ReZero: Kara Hajimeru Isekai Seikatsu" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">ReZero:</br>Kara Hajimeru Isekai Seikatsu</h5>
+        <h5 class="card-title">ReZero: Kara Hajimeru Isekai Seikatsu</h5>
 		<h5 class="card-year">2016</h5>
         <p class="card-text"></p>
 		</div>
@@ -3245,7 +3250,7 @@ function topFunction() {
       <img src="https://i.imgur.com/oKqDc1e.jpeg"  alt="ReZero: Kara Hajimeru Isekai Seikatsu Memory Snow" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">ReZero:</br>Kara Hajimeru Isekai Seikatsu</br>Wspomnienie śniegu</h5>
+        <h5 class="card-title">ReZero: Kara Hajimeru Isekai Seikatsu Wspomnienie śniegu</h5>
 		<h5 class="card-year">2018</h5>
         <p class="card-text"></p>
 		</div>
@@ -3260,7 +3265,7 @@ function topFunction() {
       <img src="https://i.imgur.com/E2fuVEE.jpeg"  alt="ReZero: Kara Hajimeru Isekai Seikatsu the Frozen Bond" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">ReZero:</br>Kara Hajimeru Isekai Seikatsu</br>Więzi skute lodem</h5>
+        <h5 class="card-title">ReZero: Kara Hajimeru Isekai Seikatsu Więzi skute lodem</h5>
 		<h5 class="card-year">2019</h5>
         <p class="card-text"></p>
 		</div>
@@ -3275,7 +3280,7 @@ function topFunction() {
       <img src="https://i.imgur.com/BUiFcxU.jpeg"  alt="ReZero: Kara Hajimeru Isekai Seikatsu 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">ReZero:</br>Kara Hajimeru Isekai Seikatsu 2</h5>
+        <h5 class="card-title">ReZero: Kara Hajimeru Isekai Seikatsu 2</h5>
 		<h5 class="card-year">2020-2021</h5>
         <p class="card-text"></p>
 		</div>
@@ -3290,7 +3295,7 @@ function topFunction() {
       <img src="https://i.imgur.com/bxwg29R.jpeg"  alt="ReZero: Kara Hajimeru Isekai Seikatsu 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">ReZero:</br>Kara Hajimeru Isekai Seikatsu 3</h5>
+        <h5 class="card-title">ReZero: Kara Hajimeru Isekai Seikatsu 3</h5>
 		<h5 class="card-year">2024</h5>
         <p class="card-text"></p>
 		</div>
@@ -3335,7 +3340,7 @@ function topFunction() {
       <img src="https://i.imgur.com/XXueUJf.jpeg"  alt="Samuraj Jack Sezon 1" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Samuraj Jack</br>Sezon 1</h5>
+        <h5 class="card-title">Samuraj Jack Sezon 1</h5>
 		<h5 class="card-year">2001</h5>
         <p class="card-text"></p>
 		</div>
@@ -3350,7 +3355,7 @@ function topFunction() {
       <img src="https://i.imgur.com/aP4k0Qe.jpeg"  alt="Samuraj Jack Sezon 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Samuraj Jack</br>Sezon 2</h5>
+        <h5 class="card-title">Samuraj Jack Sezon 2</h5>
 		<h5 class="card-year">2002</h5>
         <p class="card-text"></p>
 		</div>
@@ -3365,7 +3370,7 @@ function topFunction() {
       <img src="https://i.imgur.com/ME4AC2o.jpeg"  alt="Samuraj Jack Sezon 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Samuraj Jack</br>Sezon 3</h5>
+        <h5 class="card-title">Samuraj Jack Sezon 3</h5>
 		<h5 class="card-year">2002-2003</h5>
         <p class="card-text"></p>
 		</div>
@@ -3380,7 +3385,7 @@ function topFunction() {
       <img src="https://i.imgur.com/Gb2D1LP.jpeg"  alt="Samuraj Jack Sezon 4" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Samuraj Jack</br>Sezon 4</h5>
+        <h5 class="card-title">Samuraj Jack Sezon 4</h5>
 		<h5 class="card-year">2003-2004</h5>
         <p class="card-text"></p>
 		</div>
@@ -3575,7 +3580,7 @@ function topFunction() {
       <img src="https://i.imgur.com/CY4xsYV.jpeg"  alt="Spider-man Uniwersum" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Spider-man</br>Uniwersum</h5>
+        <h5 class="card-title">Spider-man Uniwersum</h5>
 		<h5 class="card-year">2018</h5>
         <p class="card-text"></p>
 		</div>
@@ -3590,7 +3595,7 @@ function topFunction() {
       <img src="https://i.imgur.com/Xywol16.jpeg"  alt="Spider-man Poprzez Multiwersum" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Spider-man</br>Poprzez Multiwersum</h5>
+        <h5 class="card-title">Spider-man Poprzez Multiwersum</h5>
 		<h5 class="card-year">2023</h5>
         <p class="card-text"></p>
 		</div>
@@ -3650,7 +3655,7 @@ function topFunction() {
       <img src="https://i.imgur.com/JA0zzhl.jpeg"  alt="Super Mario Bros Film" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Super Mario Bros</br>Film</h5>
+        <h5 class="card-title">Super Mario Bros Film</h5>
 		<h5 class="card-year">2023</h5>
         <p class="card-text"></p>
 		</div>
@@ -3710,7 +3715,7 @@ function topFunction() {
       <img src="https://i.imgur.com/hztyln5.jpeg"  alt="Testoviron" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">TESTOVIRON</br>Wszystkie filmy Chronologicznie</h5>
+        <h5 class="card-title">TESTOVIRON Wszystkie filmy Chronologicznie</h5>
 		<h5 class="card-year">2007-2013</h5>
         <p class="card-text"></p>
 		</div>
@@ -3725,7 +3730,7 @@ function topFunction() {
       <img src="https://i.imgur.com/t9ZFKwn.jpeg"  alt="The Boys Sezon 1" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">The Boys</br>Sezon 1</h5>
+        <h5 class="card-title">The Boys Sezon 1</h5>
 		<h5 class="card-year">2019</h5>
         <p class="card-text"></p>
 		</div>
@@ -3740,7 +3745,7 @@ function topFunction() {
       <img src="https://i.imgur.com/VHbzJFg.jpeg"  alt="The Boys Sezon 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">The Boys</br>Sezon 2</h5>
+        <h5 class="card-title">The Boys Sezon 2</h5>
 		<h5 class="card-year">2022</h5>
         <p class="card-text"></p>
 		</div>
@@ -3755,7 +3760,7 @@ function topFunction() {
       <img src="https://i.imgur.com/cbWdE71.jpeg"  alt="The Boys Sezon 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">The Boys</br>Sezon 3</h5>
+        <h5 class="card-title">The Boys Sezon 3</h5>
 		<h5 class="card-year">2022</h5>
         <p class="card-text"></p>
 		</div>
@@ -3770,7 +3775,7 @@ function topFunction() {
       <img src="https://i.imgur.com/Am69Fr8.jpeg"  alt="The Boys Sezon 4" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">The Boys</br>Sezon 4</h5>
+        <h5 class="card-title">The Boys Sezon 4</h5>
 		<h5 class="card-year">2024</h5>
         <p class="card-text"></p>
 		</div>
@@ -3815,7 +3820,7 @@ function topFunction() {
       <img src="https://i.imgur.com/XDuVdG9.jpeg"  alt="Tytus Romek i A'Tomek wśród złodzei marzeń" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Tytus</br>Romek i A'Tomek</br>wśród złodzei marzeń</h5>
+        <h5 class="card-title">Tytus Romek i A`Tomek wśród złodzei marzeń</h5>
 		<h5 class="card-year">2002</h5>
         <p class="card-text"></p>
 		</div>
@@ -3830,7 +3835,7 @@ function topFunction() {
       <img src="https://i.imgur.com/p6M11oT.jpeg"  alt="Escape from New York" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Ucieczka</br>z Nowego Yorku</h5>
+        <h5 class="card-title">Ucieczka z Nowego Yorku</h5>
 		<h5 class="card-year">1981</h5>
         <p class="card-text"></p>
 		</div>
@@ -3845,7 +3850,7 @@ function topFunction() {
       <img src="https://i.imgur.com/erjTQAL.jpeg"  alt="Vinland Saga" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Vinland Saga</br>Sezon 1</h5>
+        <h5 class="card-title">Vinland Saga Sezon 1</h5>
 		<h5 class="card-year">2019</h5>
         <p class="card-text"></p>
 		</div>
@@ -3860,7 +3865,7 @@ function topFunction() {
       <img src="https://i.imgur.com/d70a28u.jpeg"  alt="Vinland Saga 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Vinland Saga</br>Sezon 2</h5>
+        <h5 class="card-title">Vinland Saga Sezon 2</h5>
 		<h5 class="card-year">2023</h5>
         <p class="card-text"></p>
 		</div>
@@ -3875,7 +3880,7 @@ function topFunction() {
       <img src="https://i.imgur.com/kEiVOF3.jpeg"  alt="Wakfu: Goultard Barbarzyńca" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wakfu:</br>Goultard Barbarzyńca</h5>
+        <h5 class="card-title">Wakfu: Goultard Barbarzyńca</h5>
 		<h5 class="card-year">2007</h5>
         <p class="card-text"></p>
 		</div>
@@ -3890,7 +3895,7 @@ function topFunction() {
       <img src="https://i.imgur.com/L0kZNWe.jpeg"  alt="Wakfu - Dofus: Skarby Keruba" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Dofus</br>Skarby Keruba</h5>
+        <h5 class="card-title">Dofus Skarby Keruba</h5>
 		<h5 class="card-year">2013-2014</h5>
         <p class="card-text"></p>
 		</div>
@@ -3905,7 +3910,7 @@ function topFunction() {
       <img src="https://i.imgur.com/mTl7FQJ.jpeg"  alt="Wakfu - Dofus: Księga 1 - Julith" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Dofus:</br>Księga 1 - Julith</h5>
+        <h5 class="card-title">Dofus: Księga 1 - Julith</h5>
 		<h5 class="card-year">2014</h5>
         <p class="card-text"></p>
 		</div>
@@ -3935,7 +3940,7 @@ function topFunction() {
       <img src="https://i.imgur.com/fPO7Xor.jpeg"  alt="Wakfu: Zegarmistrz Noximilien" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wakfu:</br>Zegarmistrz Noximilien</h5>
+        <h5 class="card-title">Wakfu: Zegarmistrz Noximilien</h5>
 		<h5 class="card-year">2010</h5>
         <p class="card-text"></p>
 		</div>
@@ -3950,7 +3955,7 @@ function topFunction() {
       <img src="https://i.imgur.com/nm76vmK.jpeg"  alt="Wakfu: Legenda o Ogreście" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wakfu:</br>Legenda o Ogreście</h5>
+        <h5 class="card-title">Wakfu: Legenda o Ogreście</h5>
 		<h5 class="card-year">2011</h5>
         <p class="card-text"></p>
 		</div>
@@ -3965,7 +3970,7 @@ function topFunction() {
       <img src="https://i.imgur.com/feD9FT2.jpeg"  alt="Wakfu Sezon 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wakfu</br>Sezon 2</h5>
+        <h5 class="card-title">Wakfu Sezon 2</h5>
 		<h5 class="card-year">2011-2012</h5>
         <p class="card-text"></p>
 		</div>
@@ -3980,7 +3985,7 @@ function topFunction() {
       <img src="https://i.imgur.com/BuyfBey.jpeg"  alt="Wakfu: W poszukiwaniu Sześciu Dofusów Eliatropów" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wakfu:</br>W poszukiwaniu</br>Sześciu Dofusów Eliatropów</h5>
+        <h5 class="card-title">Wakfu: W poszukiwaniu Sześciu Dofusów Eliatropów</h5>
 		<h5 class="card-year">2014</h5>
         <p class="card-text"></p>
 		</div>
@@ -3995,7 +4000,7 @@ function topFunction() {
       <img src="https://i.imgur.com/7RNPaMe.jpeg"  alt="Wakfu Sezon 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wakfu</br>Sezon 3</h5>
+        <h5 class="card-title">Wakfu Sezon 3</h5>
 		<h5 class="card-year">2017</h5>
         <p class="card-text"></p>
 		</div>
@@ -4010,7 +4015,7 @@ function topFunction() {
       <img src="https://i.imgur.com/R9nPb4v.jpeg"  alt="Wakfu: Oropo - Bitwa o Eliacube" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wakfu:</br>Oropo</br>Bitwa o Eliacube</h5>
+        <h5 class="card-title">Wakfu: Oropo Bitwa o Eliacube</h5>
 		<h5 class="card-year">2023</h5>
         <p class="card-text"></p>
 		</div>
@@ -4025,7 +4030,7 @@ function topFunction() {
       <img src="https://i.imgur.com/cMPL2hr.jpeg"  alt="Wakfu Sezon 4" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wakfu</br>Sezon 4</h5>
+        <h5 class="card-title">Wakfu Sezon 4</h5>
 		<h5 class="card-year">2024</h5>
         <p class="card-text"></p>
 		</div>
@@ -4055,7 +4060,7 @@ function topFunction() {
       <img src="https://i.imgur.com/zZh1PXc.jpeg"  alt="Wallace i Gromit Klątwa Królika" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wallace i Gromit</br>Klątwa Królika</h5>
+        <h5 class="card-title">Wallace i Gromit Klątwa Królika</h5>
 		<h5 class="card-year">2005</h5>
         <p class="card-text"></p>
 		</div>
@@ -4070,7 +4075,7 @@ function topFunction() {
       <img src="https://i.imgur.com/IsAp6uQ.jpeg"  alt="Who killed Captain Alex" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Who killed</br>Captain Alex</h5>
+        <h5 class="card-title">Who killed Captain Alex</h5>
 		<h5 class="card-year">2010</h5>
         <p class="card-text"></p>
 		</div>
@@ -4085,7 +4090,7 @@ function topFunction() {
       <img src="https://i.imgur.com/c4RjNJ4.jpeg"  alt="The Lord of the Rings: The Fellowship of the Ring" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Władca Pierścieni</br>Drużyna Pierścienia</h5>
+        <h5 class="card-title">Władca Pierścieni Drużyna Pierścienia</h5>
 		<h5 class="card-year">2001</h5>
         <p class="card-text"></p>
 		</div>
@@ -4100,7 +4105,7 @@ function topFunction() {
       <img src="https://i.imgur.com/dg3Qs0U.jpeg"  alt="The Lord of the Rings: The Two Towers" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Władca Pierścieni</br>Dwie Wieże</h5>
+        <h5 class="card-title">Władca Pierścieni Dwie Wieże</h5>
 		<h5 class="card-year">2002</h5>
         <p class="card-text"></p>
 		</div>
@@ -4115,7 +4120,7 @@ function topFunction() {
       <img src="https://i.imgur.com/0XkIItr.jpeg"  alt="The Lord of the Rings: The Return of The King" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Władca Pierścieni</br>Powrót Króla</h5>
+        <h5 class="card-title">Władca Pierścieni Powrót Króla</h5>
 		<h5 class="card-year">2003</h5>
         <p class="card-text"></p>
 		</div>
@@ -4130,7 +4135,7 @@ function topFunction() {
       <img src="https://i.imgur.com/PoKDGAE.png"  alt="Gravity Falls 1" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wodogrzmoty małe</br>Sezon 1</h5>
+        <h5 class="card-title">Wodogrzmoty małe Sezon 1</h5>
 		<h5 class="card-year">2012-2013</h5>
         <p class="card-text"></p>
 		</div>
@@ -4145,7 +4150,7 @@ function topFunction() {
       <img src="https://i.imgur.com/BMn6lQL.png"  alt="Gravity Falls 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wodogrzmoty małe</br>Sezon 2</h5>
+        <h5 class="card-title">Wodogrzmoty małe Sezon 2</h5>
 		<h5 class="card-year">2014-2016</h5>
         <p class="card-text"></p>
 		</div>
@@ -4160,7 +4165,7 @@ function topFunction() {
       <img src="https://i.imgur.com/9Bgvj5j.jpeg"  alt="Gravity Falls Specials" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Wodogrzmoty małe</br>Odcinki specjalne</h5>
+        <h5 class="card-title">Wodogrzmoty małe Odcinki specjalne</h5>
 		<h5 class="card-year">2012-2016</h5>
         <p class="card-text"></p>
 		</div>
@@ -4220,7 +4225,7 @@ function topFunction() {
       <img src="https://i.imgur.com/yc0jfE1.jpeg"  alt="Xiaolin Showdown 1" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Xiaolin</br>Pojedynek Mistrzów</br>Sezon 1</h5>
+        <h5 class="card-title">Xiaolin Pojedynek Mistrzów Sezon 1</h5>
 		<h5 class="card-year">2003-2004</h5>
         <p class="card-text"></p>
 		</div>
@@ -4235,7 +4240,7 @@ function topFunction() {
       <img src="https://i.imgur.com/E6ViQ91.jpeg"  alt="Xiaolin Showdown 2" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Xiaolin</br>Pojedynek Mistrzów</br>Sezon 2</h5>
+        <h5 class="card-title">Xiaolin Pojedynek Mistrzów Sezon 2</h5>
 		<h5 class="card-year">2004-2005</h5>
         <p class="card-text"></p>
 		</div>
@@ -4250,7 +4255,7 @@ function topFunction() {
       <img src="https://i.imgur.com/yk8wIUG.jpeg"  alt="Xiaolin Showdown 3" width="256"height="396" />
       <div class="card-body">
 		<div class="card-name">
-        <h5 class="card-title">Xiaolin</br>Pojedynek Mistrzów</br>Sezon 3</h5>
+        <h5 class="card-title">Xiaolin Pojedynek Mistrzów Sezon 3</h5>
 		<h5 class="card-year">2005-2006</h5>
         <p class="card-text"></p>
 		</div>
@@ -4293,7 +4298,7 @@ function topFunction() {
 </div>
 
 <script src="mdb.umd.min.js"></script>
-
+<script src="script.js"></script>
 </body>
 
 </html>
