@@ -83,10 +83,10 @@ function topFunction() {
 	</div>
 </div>
 <div class="wyszukiwarka">
-	<div class="siur">
+	<div class="autocomplete">
 	<form name="f1" action="" 
 		onSubmit="if(this.t1.value!=null && this.t1.value!='') findString(this.t1.value);return false">
-			<input id="searchInput" placeholder="..." type="text" name=t1 value="" size=50 autocomplete="off" onfocus="this.value=''" style="background-color:#131f37;color:white;border:none;margin-bottom:3px;text-align:center">
+			<input id="myInput" placeholder="..." type="text" name=t1 value="" size=50 autocomplete="off" onfocus="this.value=''" style="background-color:#131f37;color:white;border:none;margin-bottom:3px;text-align:center">
 			<div id="suggestions"></div>
 			<button type="submit" id="wyszukaj" class="btn btn-primary"name=b1 data-mdb-ripple-init>WYSZUKAJ</button>
 	</form>
