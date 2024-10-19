@@ -129,18 +129,46 @@ body {
   right: 30px;
   z-index: 997;
 }
-#suggestions{
-  background-color: #131f37;
-  width: 460px;
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-  z-index: 999;
-  max-height:330px;
-  overflow-y: auto;
-}
 #wyszukaj{
   position: fixed;
   top:56px;
   transform: translateX(250px)
+}
+* {
+  box-sizing: border-box;
+}
+/*the container must be positioned relative:*/
+.autocomplete {
+  position: relative;
+  display: inline-block;
+}
+.autocomplete-items {
+  position: absolute;
+  border: 1px solid #324565;
+  border-bottom: none;
+  border-top: none;
+  z-index: 999;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height:500px;
+  overflow-y: auto;
+}
+.autocomplete-items div {
+  padding: 8px;
+  cursor: pointer;
+  background-color: #131f37; 
+  border-bottom: 1px solid #324565;
+}
+
+/*when hovering an item:*/
+.autocomplete-items div:hover {
+  background-color: #3bca7d; 
+}
+
+/*when navigating through the items using the arrow keys:*/
+.autocomplete-active {
+  background-color: #3bca7d !important; 
+  color: #ffffff; 
 }
