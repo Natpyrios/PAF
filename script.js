@@ -244,6 +244,7 @@ var filmy = [
 		'Job Czyli ostatnia szara komórka', 
 		'Jojo`s Bizarre Adventure', 
 		'Joker', 
+		'Joker: Folie à Deux',
 		'Jujutsu Kaisen Zero', 
 		'Kac Vegas', 
 		'Kaguya-Sama Love is War', 
