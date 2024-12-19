@@ -358,6 +358,7 @@ var filmy = [
 		'ReZero: Kara Hajimeru Isekai Seikatsu 2', 
 		'ReZero: Kara Hajimeru Isekai Seikatsu 3', 
 		'Roboty', 
+		'Rybki z Ferajny',
 		'RRRrrrr!!!', 
 		'Samuraj Jack Sezon 1', 
 		'Samuraj Jack Sezon 2', 
