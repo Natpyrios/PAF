@@ -499,7 +499,8 @@ var filmy = [
 		'Toradora!',
 		'Toy Story (1995)',
 		'Toy Story 2 (1999)',
-		'Toy Story 3 (2010)'
+		'Toy Story 3 (2010)',
+		'Toy Story 4 (2019)',
 		'Transporter',
 		'Transporter 2',
 		'Transporter 3',
