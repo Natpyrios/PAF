@@ -19,7 +19,7 @@ const UNAGE = '__no_age__';
 // the CSV export redirects through googleusercontent which can refuse the
 // cross-origin fetch from the browser.
 const SHEETS_GVIZ_URL = 'https://docs.google.com/spreadsheets/d/1CuHfluEd-9hVun6ANAeK41lNx949Aa_j0YVzWbgGIY8/gviz/tq?tqx=out:json';
-const CACHE_KEY    = 'paf_live_db_v8';
+const CACHE_KEY    = 'paf_live_db_v9';
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 const SHEET_COL = {
@@ -65,6 +65,15 @@ function highlightMatch(text, query) {
   return esc(text.slice(0, idx)) +
     '<mark class="hl">' + esc(text.slice(idx, idx + query.length)) + '</mark>' +
     esc(text.slice(idx + query.length));
+}
+
+// Splits a trailing "(YYYY)" / "(YYYY-YYYY)" off the title so renderers can
+// dim the year visually while keeping it searchable.
+function titleHtml(title, query) {
+  const m = String(title || '').match(/^(.*?)(\s*\(\d{4}(?:-\d{4})?\))$/);
+  if (!m) return highlightMatch(title, query);
+  return highlightMatch(m[1], query) +
+    '<span class="title-year">' + highlightMatch(m[2], query) + '</span>';
 }
 
 function renderStars(n) {
@@ -156,12 +165,12 @@ function renderCard(c, query) {
     '<div class="p-2 flex">' +
       '<div class="card-modern w-[calc(50vw-20px)] max-w-[200px] sm:w-[calc(33vw-20px)] sm:max-w-[220px] md:w-64 md:max-w-none h-full flex flex-col">' +
         '<div class="relative">' +
-          '<img src="' + c.cover + '" alt="' + esc(c.alt) + '" width="256" height="396" class="block w-full aspect-[256/396] object-fill" />' +
+          '<img src="' + c.cover + '" alt="' + esc(c.alt) + '" data-year="' + (c._sortYear || '') + '" width="256" height="396" class="block w-full aspect-[256/396] object-fill" />' +
           hoverOverlay + tlBadge + trBadge + brBadge +
         '</div>' +
         '<div class="px-3 py-2 flex flex-col items-center gap-1.5 flex-1">' +
           '<div class="flex flex-col items-center justify-center gap-1 flex-1 min-h-[60px] w-full">' +
-            '<h5 class="card-title">' + highlightMatch(c.title, titleQuery) + '</h5>' +
+            '<h5 class="card-title">' + titleHtml(c.title, titleQuery) + '</h5>' +
             '<h5 class="card-year">' + yearBlock + '</h5>' +
           '</div>' +
           '<img src="' + r.url + '" title="' + esc(r.title) + '" alt="' + ratingNum + '/5" width="100" height="31" class="block">' +
@@ -579,12 +588,20 @@ function rowToEntry(row) {
   const rodzaj   = cell(SHEET_COL.RODZAJ);
   const opis     = cell(SHEET_COL.OPIS);
 
+  // Extract a single 4-digit year first — used both for the sort key and to
+  // prefer a year-specific cover file ("Nazwa 2001.jpeg") when the user keeps
+  // separate posters for entries that share a Nazwa.
+  const yearMatch = rok ? rok.match(/(\d{4})/) : null;
+  const yearNum   = yearMatch ? parseInt(yearMatch[1], 10) : null;
+
   const title  = rok ? (nazwa + ' (' + rok + ')') : nazwa;
-  const cover  = 'cover/' + encodeURIComponent(sanitizeCoverName(nazwa)) + '.jpeg';
+  const coverName = sanitizeCoverName(nazwa) + (yearNum ? ' ' + yearNum : '');
+  const cover  = 'cover/' + encodeURIComponent(coverName) + '.jpeg';
   const tags   = tagi ? tagi.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [];
   const rating = parseInt(ocena, 10) || 0;
   const ageM   = wiek.match(/(\d+)/);
   const age    = ageM ? parseInt(ageM[1], 10) : null;
+  // yearNum from above feeds entry._sortYear at the end.
 
   const entry = { title: title, cover: cover, alt: nazwa, rating: rating };
   const hasMeta = rodzaj || tags.length || age != null;
@@ -611,10 +628,7 @@ function rowToEntry(row) {
 
   // Pre-computed sort keys — parsed once here so sortFiltered() can do plain
   // numeric compares instead of regex/split per swap.
-  if (rok) {
-    const ym = rok.match(/(\d{4})/);
-    if (ym) entry._sortYear = parseInt(ym[1], 10);
-  }
+  if (yearNum) entry._sortYear = yearNum;
   if (dlugosc) {
     const parts = dlugosc.split(':').map(function (s) { return parseInt(s, 10) || 0; });
     let secs = 0;
@@ -677,31 +691,98 @@ async function loadData(forceFresh) {
   }
 }
 
-// renderCard emits `.jpeg` URLs; on error walk through these fallback exts,
-// then try a single placeholder image, then give up and hide.
-const COVER_FALLBACK_EXTS = ['.jpg', '.png', '.webp'];
-const COVER_PLACEHOLDER   = 'cover/placeholder.jpg';
+// rowToEntry emits cover/<name>.jpeg where <name> uses ":" → " -". On error,
+// the fallback chain walks: every extension, then alternative ":"-replacement
+// strategies ("-" and "" — naked space), then placeholder. This covers files
+// named "Atlantyda - …" / "Atlantyda- …" / "Atlantyda …" without forcing
+// the user to keep them in lockstep with the sanitize rule.
+const COVER_EXTS        = ['.jpeg', '.jpg', '.png', '.webp'];
+const COVER_PLACEHOLDER = 'cover/placeholder.jpg';
+
+function coverNameVariants(nazwa) {
+  function clean(s) {
+    return String(s || '')
+      .replace(/[\/\\<>"|?*]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  // NFD decomposes most diacritics (ą, ó, ś, …) into base + combining mark,
+  // which we then strip — but `ł`/`Ł` are precomposed single codepoints and
+  // need explicit substitution.
+  function stripDiacritics(s) {
+    return s
+      .normalize('NFD')
+      .replace(/[̀-ͯ]/g, '')
+      .replace(/ł/g, 'l')
+      .replace(/Ł/g, 'L');
+  }
+
+  // For each of the three ":"-replacement strategies, emit 8 forms:
+  // {original, diacritics-stripped} × {spaced, unspaced} × {as-is, lower-case}.
+  // Set-based dedupe collapses duplicates (e.g. unspaced forms across colon
+  // strategies often coincide).
+  const bases = [' -', '-', ''].map(function (rep) {
+    return clean(nazwa.replace(/:/g, rep));
+  });
+
+  const forms = [];
+  bases.forEach(function (base) {
+    const stripped       = stripDiacritics(base);
+    const baseNoSpace    = base.replace(/\s+/g, '');
+    const strippedNoSp   = stripped.replace(/\s+/g, '');
+    forms.push(
+      base,            stripped,
+      baseNoSpace,     strippedNoSp,
+      base.toLowerCase(),        stripped.toLowerCase(),
+      baseNoSpace.toLowerCase(), strippedNoSp.toLowerCase()
+    );
+  });
+
+  const seen = new Set();
+  return forms.filter(function (s) {
+    if (!s || seen.has(s)) return false;
+    seen.add(s);
+    return true;
+  });
+}
+
+function buildCoverCandidates(nazwa, year) {
+  const urls = [];
+  // Year-specific candidates first ("Nazwa 2001.*" with all variants), so
+  // when the same Nazwa repeats across years the user can keep separate
+  // posters by suffixing the year — fallback chain still degrades to the
+  // year-less file if no year-specific exists.
+  if (year) {
+    coverNameVariants(nazwa + ' ' + year).forEach(function (variant) {
+      COVER_EXTS.forEach(function (ext) {
+        urls.push('cover/' + encodeURIComponent(variant) + ext);
+      });
+    });
+  }
+  coverNameVariants(nazwa).forEach(function (variant) {
+    COVER_EXTS.forEach(function (ext) {
+      urls.push('cover/' + encodeURIComponent(variant) + ext);
+    });
+  });
+  urls.push(COVER_PLACEHOLDER);
+  return urls;
+}
 
 function attachCoverFallback(img, onSettled) {
-  let attempt = 0;
-  let placeholderTried = false;
+  // candidates[0] is what rowToEntry already set as src — skip it.
+  const candidates = buildCoverCandidates(img.alt || '', img.dataset.year || '');
+  let idx = 1;
   function settle() { if (onSettled) onSettled(); }
 
   img.addEventListener('load', settle, { once: true });
   img.addEventListener('error', function onError() {
-    if (attempt < COVER_FALLBACK_EXTS.length) {
+    if (idx < candidates.length) {
       img.addEventListener('error', onError, { once: true });
-      img.src = img.src.replace(/\.(jpeg|jpg|png|webp)(\?.*)?$/, COVER_FALLBACK_EXTS[attempt++] + '$2');
-      return;
+      img.src = candidates[idx++];
+    } else {
+      img.style.display = 'none';
+      settle();
     }
-    if (!placeholderTried) {
-      placeholderTried = true;
-      img.addEventListener('error', onError, { once: true });
-      img.src = COVER_PLACEHOLDER;
-      return;
-    }
-    img.style.display = 'none';
-    settle();
   }, { once: true });
 }
 
@@ -776,9 +857,9 @@ function openModal(c) {
 
   card.innerHTML =
     '<button type="button" class="paf-modal-close" aria-label="Zamknij">×</button>' +
-    '<div class="paf-modal-cover"><img src="' + c.cover + '" alt="' + esc(c.alt) + '"></div>' +
+    '<div class="paf-modal-cover"><img src="' + c.cover + '" alt="' + esc(c.alt) + '" data-year="' + (c._sortYear || '') + '"></div>' +
     '<div class="paf-modal-info">' +
-      '<h2 class="paf-modal-title">' + esc(c.title) + '</h2>' +
+      '<h2 class="paf-modal-title">' + titleHtml(c.title, '') + '</h2>' +
       '<div class="paf-modal-rating"><img src="' + r.url + '" title="' + esc(r.title) + '" alt="' + ratingNum + '/5" width="100" height="31"></div>' +
       (chips.length ? '<div class="paf-modal-chips">' + chips.join(' ') + '</div>' : '') +
       (c.opis ? '<p class="paf-modal-opis">' + esc(c.opis) + '</p>' : '') +
