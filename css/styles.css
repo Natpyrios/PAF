@@ -1,0 +1,323 @@
+/* PAF — bespoke styles. Tailwind handles layout/typography/spacing via CDN.
+   Anything below is what doesn't fit cleanly as a utility class:
+   gradients, multi-shadow glows, animations, the one warm accent (.hl). */
+
+/* ---------- body background ---------- */
+html { color-scheme: dark; }
+body {
+  background-color: #06080f;
+  background-image:
+    radial-gradient(ellipse at top left, rgba(20, 184, 166, 0.08), transparent 50%),
+    radial-gradient(ellipse at bottom right, rgba(37, 99, 235, 0.08), transparent 50%);
+  background-attachment: fixed;
+}
+
+/* ---------- top stripe — 2px gradient with glow ---------- */
+.kreska {
+  background: linear-gradient(90deg, #14b8a6 0%, #06b6d4 50%, #3b82f6 100%);
+  box-shadow: 0 0 12px rgba(20, 184, 166, 0.5);
+}
+
+/* ---------- search input ---------- */
+#myInput {
+  background-color: rgba(15, 19, 32, 0.8);
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+}
+#myInput:focus {
+  outline: none;
+  border-color: #14b8a6;
+  background-color: rgba(15, 19, 32, 0.95);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15), 0 0 24px rgba(20, 184, 166, 0.1);
+}
+#myInput::placeholder {
+  color: #64748b;
+}
+
+/* ---------- sort dropdown (top-bar right corner) ---------- */
+#sort {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: rgba(15, 19, 32, 0.8);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><path d='M19.5 8.25l-7.5 7.5-7.5-7.5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  padding-right: 28px;
+  cursor: pointer;
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+}
+#sort:focus {
+  outline: none;
+  border-color: #14b8a6;
+  background-color: rgba(15, 19, 32, 0.95);
+  box-shadow: 0 0 0 3px rgba(20, 184, 166, 0.15);
+}
+#sort option {
+  background-color: #0f1320;
+  color: #f1f5f9;
+}
+
+/* ---------- primary button (teal→blue gradient + glow) ---------- */
+.btn-primary {
+  background-image: linear-gradient(135deg, #0d9488, #1d4ed8);
+  box-shadow: 0 4px 16px rgba(13, 148, 136, 0.35);
+  transition: box-shadow 0.2s, background-image 0.2s, transform 0.1s;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background-image: linear-gradient(135deg, #14b8a6, #2563eb);
+  box-shadow: 0 6px 24px rgba(20, 184, 166, 0.45);
+}
+.btn-primary:active {
+  transform: translateY(1px);
+}
+.btn-primary:disabled,
+.btn-primary:disabled:hover {
+  background-image: linear-gradient(135deg, #475569, #64748b);
+  box-shadow: none;
+  cursor: wait;
+  transform: none;
+}
+
+/* ---------- cover overlays (hover-only) ----------
+   Four elements fade in together on .card-modern:hover: top-left badge
+   (file format · size), top-right badge (quality), bottom-right badge
+   (language), bottom hover row (duration + episode count). */
+.cover-badge {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1.2;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: #cbd5e1;
+  background-color: rgba(6, 8, 15, 0.78);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.cover-hover {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 24px 10px 8px;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: #f1f5f9;
+  text-align: left;
+  background: linear-gradient(to top, rgba(6, 8, 15, 0.92) 0%, rgba(6, 8, 15, 0) 100%);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  pointer-events: none;
+}
+.card-modern:hover .cover-badge,
+.card-modern:hover .cover-hover {
+  opacity: 1;
+}
+.cover-badge--lang {
+  max-width: 150px;
+  text-align: right;
+}
+
+/* ---------- card (hover lift + teal glow) ---------- */
+.card-modern {
+  background-color: #0f1320;
+  border: 1px solid rgba(148, 163, 184, 0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+}
+.card-modern:hover {
+  transform: translateY(-3px);
+  border-color: rgba(20, 184, 166, 0.4);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6), 0 0 24px rgba(20, 184, 166, 0.15);
+}
+
+/* ---------- card text ---------- */
+.card-title {
+  inline-size: 100%;
+  max-inline-size: 200px;
+  overflow: hidden;
+  text-align: center;
+  color: #f1f5f9;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+.card-year {
+  inline-size: 100%;
+  max-inline-size: 200px;
+  overflow: hidden;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+}
+.card-year:empty {
+  display: none;
+}
+
+/* ---------- chips under the card title — small, subtle, color-hinted ----
+   The tag/type chips are teal-outlined pills; the age chips share the pill
+   shape but each carries its category's colour as text + faint tinted bg,
+   so the meaning is still legible without the chips dominating the card. */
+.btn-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  background-color: rgba(20, 184, 166, 0.08);
+  color: #5eead4;
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+}
+
+.btn-3, .btn-7, .btn-12, .btn-16, .btn-18 {
+  display: inline-block;
+  font-size: 10px;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  line-height: 1.4;
+}
+.btn-3  { color: #34d399; border-color: rgba( 52, 211, 153, 0.3);  background-color: rgba( 52, 211, 153, 0.08); }
+.btn-7  { color: #38bdf8; border-color: rgba( 56, 189, 248, 0.3);  background-color: rgba( 56, 189, 248, 0.08); }
+.btn-12 { color: #facc15; border-color: rgba(250, 204,  21, 0.3);  background-color: rgba(250, 204,  21, 0.08); }
+.btn-16 { color: #fb923c; border-color: rgba(251, 146,  60, 0.3);  background-color: rgba(251, 146,  60, 0.08); }
+.btn-18 { color: #f87171; border-color: rgba(248, 113, 113, 0.3);  background-color: rgba(248, 113, 113, 0.08); }
+
+
+/* ---------- filter sidebar ---------- */
+.filtry-naglowek {
+  color: #94a3b8;
+  margin: 0 0 4px 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 600;
+}
+.filtry-naglowek:not(:first-child) {
+  margin-top: 14px;
+}
+/* slim teal scrollbar for the sidebar */
+#filtry::-webkit-scrollbar { width: 6px; }
+#filtry::-webkit-scrollbar-track { background: transparent; }
+#filtry::-webkit-scrollbar-thumb {
+  background: rgba(20, 184, 166, 0.25);
+  border-radius: 3px;
+}
+#filtry::-webkit-scrollbar-thumb:hover { background: rgba(20, 184, 166, 0.45); }
+#filtry { scrollbar-width: thin; scrollbar-color: rgba(20, 184, 166, 0.25) transparent; }
+
+/* Mobile: sidebar collapses into a full-width overlay below the search bar,
+   toggled by the "Filtry" button. The Tailwind classes on #filtry already
+   position it for both layouts; this rule just hides it on mobile when the
+   toggle hasn't been pressed yet. Threshold mirrors Tailwind's `md` default
+   (768 px) — they MUST stay in sync if you ever override the breakpoint. */
+@media (max-width: 767px) {
+  #filtry:not(.is-open) { display: none; }
+}
+.filter-btn {
+  font-size: 12px;
+  background-color: rgba(255, 255, 255, 0.03);
+  color: #cbd5e1;
+  border: 1px solid rgba(148, 163, 184, 0.08);
+  padding: 5px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  text-align: left;
+  font-weight: 500;
+  transition: background-color 0.15s, border-color 0.15s, color 0.15s, box-shadow 0.2s;
+}
+.filter-btn:hover {
+  background-color: rgba(20, 184, 166, 0.08);
+  border-color: rgba(20, 184, 166, 0.3);
+  color: #fff;
+}
+.filter-btn.active {
+  background-image: linear-gradient(135deg, #0d9488, #1d4ed8);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(20, 184, 166, 0.3);
+}
+.filter-btn.active:hover {
+  background-image: linear-gradient(135deg, #14b8a6, #2563eb);
+  box-shadow: 0 4px 20px rgba(20, 184, 166, 0.45);
+}
+.filter-btn-all {
+  font-size: 11px;
+  background-color: transparent;
+  color: #94a3b8;
+  border: 1px dashed rgba(148, 163, 184, 0.25);
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-top: 6px;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s, border-style 0.15s;
+}
+.filter-btn-all:hover {
+  color: #f1f5f9;
+  border-color: rgba(20, 184, 166, 0.5);
+  border-style: solid;
+  background-color: rgba(20, 184, 166, 0.06);
+}
+
+/* ---------- rating panel — stars instead of "5/5" text ---------- */
+.filter-btn[data-section="ocena"] {
+  font-size: 14px;
+  text-align: center;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+}
+.star-on  { color: #fbbf24; }
+.star-off { color: #475569; }
+.filter-btn[data-section="ocena"].active .star-on  { color: #fff; }
+.filter-btn[data-section="ocena"].active .star-off { color: rgba(255, 255, 255, 0.3); }
+
+/* ---------- search-match highlight — the single warm accent ---------- */
+.hl {
+  background: transparent;
+  color: #fbbf24;
+  text-decoration: underline;
+  text-decoration-color: #fbbf24;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 2px;
+  font-weight: 700;
+}
+
+/* ---------- card fade-in (driven by script.js progressive renderer) ----------
+   Reveal waits in JS for the cover image's `load` event AND a per-card stagger,
+   so a card never appears half-painted. The transition itself is a soft slide-up
+   with opacity — long enough to feel deliberate, short enough to keep the
+   cascade snappy. */
+.card-fade {
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 280ms ease-out, transform 280ms ease-out;
+}
+.card-fade.card-shown {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ---------- empty state ---------- */
+.brak {
+  flex-basis: 100%;
+  text-align: center;
+  padding: 80px 20px;
+  color: #94a3b8;
+  font-size: 16px;
+  font-weight: 500;
+}

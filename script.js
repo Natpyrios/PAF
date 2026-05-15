@@ -1,674 +1,708 @@
-function autocomplete(inp, arr) {
-  /*the autocomplete function takes two arguments,
-  the text field element and an array of possible autocompleted values:*/
-  var currentFocus;
-  /*execute a function when someone writes in the text field:*/
-  inp.addEventListener("input", function(e) {
-      var a, b, i, val = this.value;
-      /*close any already open lists of autocompleted values*/
-      closeAllLists();
-      if (!val) { return false;}
-      currentFocus = -1;
-      /*create a DIV element that will contain the items (values):*/
-      a = document.createElement("DIV");
-      a.setAttribute("id", this.id + "autocomplete-list");
-      a.setAttribute("class", "autocomplete-items");
-      /*append the DIV element as a child of the autocomplete container:*/
-      this.parentNode.appendChild(a);
-      /*for each item in the array...*/
-      for (i = 0; i < arr.length; i++) {
-        /*check if the item starts with the same letters as the text field value:*/
-        if (arr[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
-          /*create a DIV element for each matching element:*/
-          b = document.createElement("DIV");
-          /*make the matching letters bold:*/
-          b.innerHTML = "<strong>" + arr[i].substr(0, val.length) + "</strong>";
-          b.innerHTML += arr[i].substr(val.length);
-          /*insert a input field that will hold the current array item's value:*/
-          b.innerHTML += "<input type='hidden' value='" + arr[i] + "'>";
-          /*execute a function when someone clicks on the item value (DIV element):*/
-          b.addEventListener("click", function(e) {
-              /*insert the value for the autocomplete text field:*/
-              inp.value = this.getElementsByTagName("input")[0].value;
-              /*close the list of autocompleted values,
-              (or any other open lists of autocompleted values:*/
-              closeAllLists();
-          });
-          a.appendChild(b);
-        }
-      }
-  });
-  /*execute a function presses a key on the keyboard:*/
-  inp.addEventListener("keydown", function(e) {
-      var x = document.getElementById(this.id + "autocomplete-list");
-      if (x) x = x.getElementsByTagName("div");
-      if (e.keyCode == 40) {
-        /*If the arrow DOWN key is pressed,
-        increase the currentFocus variable:*/
-        currentFocus++;
-        /*and and make the current item more visible:*/
-        addActive(x);
-      } else if (e.keyCode == 38) { //up
-        /*If the arrow UP key is pressed,
-        decrease the currentFocus variable:*/
-        currentFocus--;
-        /*and and make the current item more visible:*/
-        addActive(x);
-      } else if (e.keyCode == 13) {
-        /*If the ENTER key is pressed, prevent the form from being submitted,*/
-        e.preventDefault();
-        if (currentFocus > -1) {
-          /*and simulate a click on the "active" item:*/
-          if (x) x[currentFocus].click();
-        }
-      }
-  });
-  function addActive(x) {
-    /*a function to classify an item as "active":*/
-    if (!x) return false;
-    /*start by removing the "active" class on all items:*/
-    removeActive(x);
-    if (currentFocus >= x.length) currentFocus = 0;
-    if (currentFocus < 0) currentFocus = (x.length - 1);
-    /*add class "autocomplete-active":*/
-    x[currentFocus].classList.add("autocomplete-active");
-  }
-  function removeActive(x) {
-    /*a function to remove the "active" class from all autocomplete items:*/
-    for (var i = 0; i < x.length; i++) {
-      x[i].classList.remove("autocomplete-active");
-    }
-  }
-  function closeAllLists(elmnt) {
-    /*close all autocomplete lists in the document,
-    except the one passed as an argument:*/
-    var x = document.getElementsByClassName("autocomplete-items");
-    for (var i = 0; i < x.length; i++) {
-      if (elmnt != x[i] && elmnt != inp) {
-        x[i].parentNode.removeChild(x[i]);
-      }
-    }
-  }
-  /*execute a function when someone clicks in the document:*/
-  document.addEventListener("click", function (e) {
-      closeAllLists(e.target);
+const RATINGS = [
+  { url: 'https://i.imgur.com/s72fabd.png', title: 'brak oceny' },
+  { url: 'https://i.imgur.com/ETeEAiR.png', title: 'fatalny' },
+  { url: 'https://i.imgur.com/mw6v51f.png', title: 'słaby' },
+  { url: 'https://i.imgur.com/agYGgMZ.png', title: 'średniak' },
+  { url: 'https://i.imgur.com/z8SwGro.png', title: 'dobry' },
+  { url: 'https://i.imgur.com/vlkGgwf.png', title: 'cinema' },
+];
+
+const BATCH_SIZE = 20;
+const STAGGER_MS = 35;
+const PREFETCH_MARGIN_PX = 500;
+const UNTYPED = '__no_type__';
+const UNTAGGED = '__no_tag__';
+const UNAGE = '__no_age__';
+
+// Live data source — Google Sheets via the gviz JSON endpoint. Picked over
+// `/export?format=csv` because gviz sends CORS headers consistently, whereas
+// the CSV export redirects through googleusercontent which can refuse the
+// cross-origin fetch from the browser.
+const SHEETS_GVIZ_URL = 'https://docs.google.com/spreadsheets/d/1CuHfluEd-9hVun6ANAeK41lNx949Aa_j0YVzWbgGIY8/gviz/tq?tqx=out:json';
+const CACHE_KEY    = 'paf_live_db_v5';
+const CACHE_TTL_MS = 60 * 60 * 1000;
+
+const SHEET_COL = {
+  NAZWA: 4, ROK: 5, ODC: 6, LANGUAGE: 7,
+  DLUGOSC: 9, JAKOSC: 10, FILETYPE: 11, GB: 12,
+  OCENA: 14, WIEK: 15, TAGI: 16, RODZAJ: 17,
+};
+
+// Cover-filename character replacements. Must be byte-equivalent to whatever
+// produced the files in cover/ — if you ever rename files there with different
+// rules, update this table or the lookup will miss.
+const COVER_ILLEGAL = [
+  [':', ' -'], ['/', ' '], ['\\', ' '],
+  ['<', ''], ['>', ''], ['"', ''], ['|', ''], ['?', ''], ['*', '']
+];
+function sanitizeCoverName(s) {
+  let r = String(s == null ? '' : s).trim();
+  for (const [bad, good] of COVER_ILLEGAL) r = r.split(bad).join(good);
+  return r.replace(/\s+/g, ' ').trim();
+}
+
+function esc(s) {
+  return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
   });
 }
 
-/*An array containing all the country names in the world:*/
-var filmy = [
-		'7 Krasnoludków: Historia prawdziwa (2004)',
-		'7 Krasnoludków: Historia jeszcze prawdziwsza: Las to za mało (2006)', 
-		'9 (2009)',
-		'13 Posterunek (1997-1998)',
-		'13 Posterunek 2 (2000)',
-		'21.37 (2025)',
-		'127 godzin (2010)',
-        '300 (2006)',
-		'1670 (2023)',
-		'2012 (2009)',
-		'500000000 years button (2022)',
-		'Ach, ten Andy! (2001-2007)',
-		'Adamczyk: Legendarny stream z Bimbeshem (2022)', 
-		'Adamczyk: Ostra patologia w Krakowie (2024)',
-		'Akademia Policyjna (1984)', 
-		'Anora (2024)',
-		'Apocalypto (2006)',
-		'Arcane (2021)', 
-		'Arcane Sezon 2 (2024)',
-		'Arcydzieło, czyli dekalog producenta filmowego (2023)', 
-		'Asterix Gall (1967)', 
-		'Asterix i Kleopatra (1968)', 
-		'12 Prac Asterixa (1976)',
-		'Asterix kontra Cezar (1985)', 
-		'Asterix w Brytanii (1986)', 
-		'Wielka Bitwa Asterixa (1989)', 
-		'Asterix podbija Amerykę (1994)', 
-		'Asterix i Obelix kontra Cezar (1999)', 
-		'Asterix i Obelix Misja Kleopatra (2002)', 
-		'Asterix i Wikingowie (2006)', 
-		'Asterix na olimpiadzie (2008)', 
-		'Asterix i Obelix: Imperium Smoka (2023)', 
-		'Attack on Titan (2013)',
-		'Attack on Titan Sezon 2 (2017)',
-		'Attack on Titan Sezon 3 (2018-2019)',
-		'Attack on Titan Sezon 4 (2020-2022)',
-		'Atomówki (1998-2004)',
-		'Auta (2006)', 
-		'Auta 2 (2011)', 
-		'Auta 3 (2017)', 
-		'Avatar: Legenda Aanga Księga I - Woda (2005)', 
-		'Avatar: Legenda Aanga Księga II - Ziemia (2006)', 
-		'Avatar: Legenda Aanga Księga III - Ogień (2007-2008)', 
-		'Avatar: Legenda Korry Księga I - Powietrze (2012)', 
-		'Avatar: Legenda Korry Księga II - Duchy (2012)', 
-		'Avatar: Legenda Korry Księga III - Zmiana (2014)', 
-		'Avatar: Legenda Korry Księga IV - Równowaga (2014)', 
-		'Barbie (2023)', 
-		'Ben 10 (2005-2008)',
-		'Berserk The Golden Age arc I: The egg of the king (2012)',
-		'Berserk The Golden Age arc II: The battle for Doldrey (2012)',
-		'Bibliotekarz: Tajemnica Włóczni (2004)',
-		'Bibliotekarz II: Tajemnice kopalni króla Salomona (2006)',
-		'Bibliotekarz III: Klątwa kielicha Judasza (2008)',
-		'Bionicle Maska Światła (2003)', 
-		'Bionicle 2 Legendy Metru Nui (2004)', 
-		'Bionicle 3 W sieci mroku (2005)', 
-		'Bionicle Narodziny Legendy (2009)', 
-		'Bleach: Arc 01 Agent Shinigami (2004-2005)', 
-		'Bleach: Arc 02 Soul Society: Wejście Donosiciela (2005)', 
-		'Bleach: Arc 03 Soul Society: Ratunek (2005-2006)', 
-		'Bleach: Arc 06 Arrancar: Przybycie (2007)', 
-		'Bleach: Arc 07 Arrancar: Wejście do Hueco Mundo (2007)', 
-		'Bleach: Arc 08 Arrancar: Zacięty Bój (2007)', 
-		'Bleach: Arc 10 Arrancar kontra Shinigami (2008-2009)',
-		'Bleach: Arc 11 Przeszłość (2009)',
-		'Bleach: Arc 12 Decydująca bitwa o Karakurę (2009)',
-		'Bleach: Arc 14 Arrancar: Upadek (2010-2011)',
-		'Bleach: Arc 16 Zaginiony agent Shinigami (2011-2012)',
-		'Bleach: Arc 17 Tysiącletnia krwawa wojna (2022)', 
-		'Bleach: Arc 18 Tysiącletnia krwawa wojna - Separacja (2023)', 
-		'Bleach: Arc 19 Tysiącletnia krwawa wojna - Konflikt (2024)',
-		'Bliźniaki Cramp (2003-2005)',
-		'Bobobo-Bo Bo-Bobo (2003-2005)', 
-		'Bocchi The Rock! (2022)', 
-		'BOFURI: I don`t want to get hurt, so I`ll max out my defense (2020)', 
-		'BOFURI: I don`t want to get hurt, so I`ll max out my defense 2 (2023)',
-		'Breaking Bad Sezon 1 (2008)', 
-		'Breaking Bad Sezon 2 (2009)', 
-		'Breaking Bad Sezon 3 (2010)', 
-		'Breaking Bad Sezon 4 (2011)', 
-		'Breaking Bad Sezon 5 (2012-2013)', 
-		'Bronzowe Myśli (2014-2019)',
-		'Bronzowe Myśli: Tymczasem (2015-2018)',
-		'Bronzowe Taktyki (2015-2016)',
-		'Bruce Lee - Wściekłe Pięści (1972)',
-		'Bruce Lee - Wejście smoka (1973)',
-		'Brutalista (2024)',
-		'Burn the Witch (2020)', 
-		'But Manitou (2001)', 
-		'Buty nieboszczyka (2004)', 
-		'Był sobie kot (2024)',
-		'Chainsaw Man (2022)', 
-		'Chłopaki z baraków Sezon 1 (2001)', 
-		'Chłopaki z baraków Sezon 2 (2002)', 
-		'Chłopaki z baraków Sezon 3 (2003)', 
-		'Chłopaki z baraków Sezon 4 (2004)', 
-		'Chłopaki z baraków Sezon 5 (2005)', 
-		'Chłopaki z baraków Sezon 6 (2006)', 
-		'Chłopaki z baraków Sezon 7 (2007)', 
-		'Chojrak tchórzliwy pies (1999-2002)',
-		'Chomik (2001)', 
-		'Chorobliwie Ostrożny Bohater (2019)', 
-		'Chowder (2007-2010)',
-		'Crash: Niebezpieczne pożądanie (1996)',
-		'Czarnobyl (2019)', 
-		'Czerwony Kapturek Prawdziwa Historia (2005)', 
-		'Czerwony Kapturek 2 Pogromca Zła (2011)',
-		'Człowiek demolka (1993)',
-		'Dan Brown Kod Da Vinci (2006)', 
-		'Dan Brown Anioły i Demony (2009)', 
-		'Dan Brown Inferno (2016)', 
-		'Dawno temu w trawie (1998)',
-		'Deadpool (2016)', 
-		'Deadpool 2 (2018)', 
-		'Deadpool i Wolverine (2024)', 
-		'Demonzz1 Stream dekady (2024)', 
-		'Demonzz1 Urodzinowa noc odkupienia (2024)', 
-		'Detroit Metal City (2008)', 
-		'Deuraegon bol: Ssawora Son O-gong, igyeora Son O-gong (1990)',
-		'Dinokrokodyl kontra Supergator (2010)',
-		'Dom dla zmyślonych przyjacioł Pani Foster (2004-2009)',
-		'Dorohedoro (2020)', 
-		'Dragon Ball (1986-1989)',
-		'Drive (2011)', 
-		'Dumbbell Nan Kilo Moteru (2019)', 
-		'Dzieciaki (1995)', 
-		'Dzień świra (2002)',
-		'Dziewczyna Influencera (2024)', 
-		'Dziki Robot (2024)',
-		'Ed Edd i Eddy Sezon 1',
-		'Ed Edd i Eddy Sezon 2',
-		'Ed Edd i Eddy Sezon 3',
-		'Ed Edd i Eddy Sezon 4',
-		'Ed Edd i Eddy Sezon 5',
-		'Ed Edd i Eddy Odcinki specjalne',
-		'Epoka Lodowcowa', 
-		'Epoka Lodowcowa 2 Odwilż', 
-		'Epoka Lodowcowa 3 Era dinozaurów', 
-		'Epoka Lodowcowa 4 Wędrówka kontynentów', 
-		'Epoka Lodowcowa 5 Mocne uderzenie', 
-		'Epoka Lodowcowa Przygody dzikiego Bucka', 
-		'Eromanga Sensei', 
-		'Fachowiec (2025)',
-		'Fallout', 
-		'Fantasy Bishoujo Juniku Ojisan to', 
-		'Fate/Stay Night (2006)',
-		'Fate/Zero (2011-2012)',
-		'Fate: Carnival Phantasm (2011)',
-		'Fate/Stay Night: Unlimited Blade Works (2014-2015)',
-		'Fate/Apocrypha (2017)',
-		'Ferrari', 
-		'Ferrari: Wyścig po nieśmiertelność', 
-		'Film o Pszczołach', 
-		'FilthyFrank The Cake Trilogy', 
-		'Fineasz i Ferb (2007-2015)',
-		'FlexAir', 
-		'Flow',
-		'Foodfight!', 
-		'Fullmetal Alchemist Brotherhood', 
-		'Futurama (1999-2024)',
-		'Garfield (2004)',
-		'Gdzie jest Nemo (2003)', 
-		'Gladiator', 
-		'Gladiator II',
-		'Goblin Slayer', 
-		'Goblin Slayer Goblin`s Crown', 
-		'Goblin Slayer II', 
-		'Godzilla i Kong: Nowe Imperium', 
-		'Godzilla: Minus One', 
-		'Godziny szczytu',
-		'Godziny szczytu 2',
-		'Godziny szczytu 3',
-		'Gothic Prawdziwa Historia', 
-		'Gothic Prawdziwa Historia Kontynuacja Alternatywna', 
-		'Gothic Prawdziwa Historia Remake', 
-		'Gra o Tron Sezon 1 (2011)',
-		'Gra o Tron Sezon 2 (2012)',
-		'Gra o Tron Sezon 3 (2013)',
-		'Gra o Tron Sezon 4 (2014)',
-		'Gra o Tron Sezon 5 (2015)',
-		'Gra o Tron Sezon 6 (2016)',
-		'Gra o Tron Sezon 7 (2017)',
-		'Gra o Tron Sezon 8 (2019)',
-		'Grand Blue', 
-		'Gran Turismo', 
-		'Gucio GTA RP Seria 1', 
-		'Gucio GTA RP Seria 2', 
-		'Gwiezdne Wojny I Mroczne widmo (1999)', 
-		'Gwiezdne Wojny II Atak Klonów (2002)', 
-		'Gwiezdne Wojny III Zemsta Sithów (2005)', 
-		'Gwiezdne Wojny IV Nowa nadzieja (1977)', 
-		'Gwiezdne Wojny V Imperium Kontraatakuje (1980)', 
-		'Gwiezdne Wojny VI Powrót Jedi (1983)',
-		'Gwiezdne Wojny VII Przebudzenie mocy (2015)',
-		'Gwiezdne Wojny VIII Ostatni Jedi (2017)',
-		'Gwiezdne Wojny IX Skywalker odrodzenie (2019)',
-		'Gwiezdne Wojny Wojny klonów miniserial 2D (2003)',
-		'Gwiezdne Wojny Parszywa Zgraja Sezon 1 (2021)',
-		'Gwiezdne Wojny Parszywa Zgraja Sezon 2 (2023)',
-		'Gwiezdne Wojny Parszywa Zgraja Sezon 3 (2024)',
-		'Gwiezdne Wojny Historie Han Solo (2018)', 
-		'Gwiezdne Wojny Obi-Wan Kenobi (2022)',
-		'Gwiezdne Wojny Rebelianci Sezon 1 (2014-2015)',
-		'Gwiezdne Wojny Rebelianci Sezon 2 (2015-2016)',
-		'Gwiezdne Wojny Rebelianci Sezon 3 (2016-2017)',
-		'Gwiezdne Wojny Rebelianci Sezon 4 (2017-2018)',
-		'Gwiezdne Wojny Andor (2022)',
-		'Gwiezdne Wojny Andor Sezon 2 (2025)',
-		'Gwiezdne Wojny Historie Łotr 1 (2016)', 
-		'Gwiezdne Wojny The Mandalorian Sezon 1 (2019)',
-		'Gwiezdne Wojny The Mandalorian Sezon 2 (2020)',
-		'Gwiezdne Wojny The Mandalorian Sezon 3 (2023)',
-		'Gwiezdne Wojny Ahsoka (2023)',
-		'Gwiezdne Wojny Wizje (2021)',
-		'Gwiezdne Wojny Wizje 2 (2023)',
-		'Harcerz Lazlo (2005-2008)',
-		'Harry Potter i Kamień Filozoficzny',
-		'Harry Potter i Komnata Tajemnic',
-		'Harry Potter i więzień Azkabanu',
-		'Harry Potter i Czara Ognia',
-		'Harry Potter i Zakon Feniksa',
-		'Harry Potter i Książę Półkrwi',
-		'Harry Potter i Insygnia Śmierci Część 1',
-		'Harry Potter i Insygnia Śmierci Część 2',
-		'Fantastyczne Zwierzęta i jak je znaleźć',
-		'Fantastyczne Zwierzęta: Zbrodnie Grindelwalda',
-		'Fantastyczne Zwierzęta: Tajemnice Dumbledore`a',
-		'Hazbin Hotel', 
-		'Hellboy', 
-		'Hellboy II Złota Armia', 
-		'Hej Arnold! (2005-2008)',
-		'Higurashi no Naku Koro ni (2006)',
-		'Higurashi no Naku Koro ni Kai (2007)',
-		'Higurashi no Naku Koro ni Gou (2020-2021)',
-		'Higurashi no Naku Koro ni Sotsu (2021)',
-		'Huntik: Łowcy Tajemnic Sezon 1',
-		'Huntik: Łowcy Tajemnic Sezon 2',
-		'Igrzyska na kacu (2014)',
-		'Iluzja', 
-		'Iluzja 2', 
-		'Indiana Jones i poszukiwacze zaginionej Arki (1981)',
-		'Indiana Jones i Świątynia Zagłady (1984)',
-		'Indiana Jones i Ostatnia Krucjata (1989)',
-		'Indiana Jones i Królestwo kryształowej czaszki (2008)',
-		'Iniemamocni (2004)',
-		'Iniemamocni 2 (2018)',
-		'Inspektor Gadget (1983-1986)',
-		'Interstellar (2014)',
-		'Invincible (2021)',
-		'Invincible Sezon 2 (2024)',
-		'Invincible Sezon 3 (2025)',
-		'Iron Man', 
-		'Iron Man 2', 
-		'Iron Man 3', 
-		'Isekai Ojisan', 
-		'Ishuzoku Reviewers', 
-		'Jack Strong', 
-		'Jackie Chan - Pijany Mistrz', 
-		'Jackie Chan - Zbroja Boga (1986)',
-		'Jackie Chan - Zbroja Boga II (1991)',
-		'Jackie Chan - Pierwsze uderzenie', 
-		'Jackie Chan - Przyjemniaczek', 
-		'Jackie Chan - Zgadnij kim jestem (1998)',
-		'Jackie Chan - Kowboj z Szanghaju', 
-		'Jackie Chan - Rycerze z Szanghaju',
-		'Jackie Chan - Agent z przypadku',  
-		'Jackie Chan - Chiński Zodiak (2012)',
-		'Jakub Patecki. Misja: Mount Everest (2024)',
-		'Jakub Patecki. Projekt Antarktyda (2025)',
-		'James Bond 23: Skyfall',
-		'James Bond 24: Spectre',
-		'James Bond 25: Nie czas umierać',
-		'Jigokuraku Hell`s Paradise', 
-		'Job Czyli ostatnia szara komórka', 
-		'Johnny Bravo Sezon 1',
-		'Johnny Bravo Sezon 2',
-		'Johnny Bravo Sezon 3',
-		'Johnny Bravo Sezon 4',
-		'Jojo`s Bizarre Adventure', 
-		'Joker', 
-		'Joker: Folie à Deux',
-		'Jujutsu Kaisen',
-		'Jujutsu Kaisen Zero', 
-		'Jujutsu Kaisen 2',
-		'Jumanji (1995)',
-		'Kac Vegas (2009)',
-		'Kac Vegas w Bangkoku (2011)',
-		'Kac Vegas III (2013)',
-		'Kaguya-Sama Love is War', 
-		'Kaguya-Sama Love is War 2', 
-		'Kaguya-Sama Love is War Ultra Romantic', 
-		'Kamdesh. Afgańskie Piekło (2019)',
-		'Kapitan Bomba', 
-		'Kapitan Bomba Laserowy Gniew Dzidy', 
-		'Kapitan Bomba Kutapokalipsa', 
-		'Kapitan Bomba Zemsta Faraona', 
-		'Kapitan Orgazmo (1997)',
-		'Karate Kid',
-		'Kaskader', 
-		'Kevin sam w domu', 
-		'Kevin sam w Nowym Jorku', 
-		'Kiniro Mosaic', 
-		'Klopsiki i inne zjawiska pogodowe', 
-		'Kono Subarashii Sekai ni Shukufuku wo!', 
-		'Kono Subarashii Sekai ni Shukufuku wo! 2', 
-		'Kono Subarashii Sekai ni Shukufuku wo! Kurenai Densetsu', 
-		'Kono Subarashii Sekai ni Shukufuku wo! 3', 
-		'Kono Subarashii Sekai ni Bakuen wo!', 
-		'Koralina i tajemnicze drzwi', 
-		'Kosmiczny Mecz', 
-		'Kot w Butach: Ostatnie Życzenie', 
-		'Kotopies (1998-2001)',
-		'K-popowe łowczynie demonów (2025)',
-		'Krowy na wypasie (2006)',
-		'Król Lew: Mufasa',
-		'Królestwo Niebieskie',
-		'Kryptonim: Klan Na Drzewie Sezon 1', 
-		'Kryptonim: Klan Na Drzewie Sezon 2', 
-		'Kryptonim: Klan Na Drzewie Sezon 3', 
-		'Kryptonim: Klan Na Drzewie Sezon 4', 
-		'Kryptonim: Klan Na Drzewie Sezon 5', 
-		'Kryptonim: Klan Na Drzewie Sezon 6', 
-		'Krzysiu, gdzie jesteś? (2018)',
-		'Książę Egiptu (1998)',
-		'Księga Ocalenia (2010)', 
-		'Kung Fu Panda', 
-		'Kung Fu Panda 2', 
-		'Kung Fu Panda 3', 
-		'Kung Fu Panda 4', 
-		'Kung Fu Szał', 
-		'Kung Pow - Wejście Wybrańca (2002)',
-		'Kurczak mały',
-		'Laboratorium Dextera (1996-2003)',
-		'Lamborghini: Człowiek, który stworzył legendę', 
-		'Legendy Sowiego Królestwa: Strażnicy Ga`Hoole', 
-		'Le Mans `66 Ford vs Ferrari', 
-		'Liga niezwykłych dżentelmenów', 
-		'Lilo i Stich', 
-		'Lilo i Stich 2 Mały feler Stitcha', 
-		'Luźny gość', 
-		'Madagaskar (2005)',
-		'Madagaskar 2 (2008)',
-		'Madagaskar 3 (2012)',
-		'Made in Abyss', 
-		'Made in Abyss Dawn of The Deep Soul', 
-		'Made in Abyss 2 The Golden City of the Scorching Sun', 
-		'Magnaci i Czarodzieje', 
-		'Mahou Shoujo ni Akogarete', 
-		'Martin Tajemniczy', 
-		'Martin Tajemniczy 2', 
-		'Martin Tajemniczy 3', 
-		'Megamocny', 
-		'Miasto Gniewu', 
-		'Mickey 17 (2025)',
-		'Miłość, Śmierć i Roboty (2019)',
-		'Miłość, Śmierć i Roboty Sezon 2 (2021)',
-		'Miłość, Śmierć i Roboty Sezon 3 (2022)',
-		'Miłość, Śmierć i Roboty Sezon 4 (2025)',
-		'Minecraft Film (2025)',
-		'Mordercza Choinka (2022)',
-		'Mój brat niedźwiedź',
-		'Mój partner z sali gimnastycznej jest małpą (2005-2008)',
-		'Mushoku Tensei', 
-		'Mushoku Tensei Part 2', 
-		'Mushoku Tensei 2', 
-		'Mushoku Tensei 2 Part 2', 
-		'Na Fali', 
-		'Nekopara OVA', 
-		'Nekopara OVA Koneko no Hi no Yakusoku', 
-		'Nekopara', 
-		'Niania (2005-2009)',
-		'Niekończąca się opowieść II: Następny rozdział (1990)',
-		'Nie zadzieraj z Fryzjerem', 
-		'No Game No Life', 
-		'No Game No Life Zero', 
-		'Nowe szaty króla',
-		'Nowe szaty króla 2 Kronk - Nowe wcielenie',
-		'Obszar Badawczy Szkolna XVII',
-		'Odlot', 
-		'Ojciec Chrzestny (1972)',
-		'Ojciec Chrzestny II (1974)',
-		'Ojciec Chrzestny III (1990)',
-		'O-Jik Geu-Dea-Man', 
-		'One Piece', 
-		'One Punch Man', 
-		'One Punch Man 2', 
-		'Operacja Świt',
-		'Opowiadania Muminków',
-		'Pamiętniki Tatusia Muminka',
-		'Oppenheimer', 
-		'Orcs!', 
-		'Ostatni Skaut', 
-		'Palm Springs', 
-		'Panty & Stocking with Garterbelt', 
-		'Paul (2011)',
-		'Piorun', 
-		'Piraci z Karaibów Klątwa Czarnej Perły', 
-		'Piraci z Karaibów Skrzynia Umarlaka', 
-		'Piraci z Karaibów Na krańcu świata', 
-		'Piraci z Karaibów Na nieznanych wodach', 
-		'Piraci z Karaibów Zemsta Salazara', 
-		'Planeta 51', 
-		'Planeta Skarbów', 
-		'Pocahontas',
-		'Podwodna Bestia', 
-		'Pokemon Indigo League (1997-1998)',
-		'Potwory i spółka', 
-		'Potwory i spółka Uniwersytet Potworny', 
-		'Poznaj moich Spartan', 
-		'Prison School', 
-		'Psy (1992)',
-		'Psy 2. Ostatnia krew (1994)',
-		'Pulp Fiction', 
-		'Putin (2025)',
-		'Ralph Demolka', 
-		'Ralph Demolka w internecie', 
-		'Rango', 
-		'Redo of Healer',
-		'Re:Zero Kara Hajimeru Isekai Seikatsu', 
-		'Re:Zero Kara Hajimeru Isekai Seikatsu Wspomnienie śniegu (2018)', 
-		'Re:Zero Kara Hajimeru Isekai Seikatsu Więzi skute lodem', 
-		'Re:Zero Kara Hajimeru Isekai Seikatsu Sezon 2', 
-		'Re:Zero Kara Hajimeru Isekai Seikatsu Sezon 3', 
-		'Rio (2011)',
-		'Roboty', 
-		'Rybki z Ferajny',
-		'RRRrrrr!!!', 
-		'Samuraj Jack Sezon 1', 
-		'Samuraj Jack Sezon 2', 
-		'Samuraj Jack Sezon 3', 
-		'Samuraj Jack Sezon 4', 
-		'Sasquatch Sunset (2024)',
-		'Sausage Party (2016)',
-		'Se7en (1995)',
-		'Sewayaki Kitsune no Senko-san', 
-		'Sexy-myjnia w bikini (2015)',
-		'Sezon na misia', 
-		'Shikanoko Nokonoko Koshitantan', 
-		'Shoujo Ramune (2016-2018)', 
-		'Shrek', 
-		'Shrek 2', 
-		'Shrek Trzeci', 
-		'Shrek Forever After', 
-		'Skazani na Shawshank (1994)',
-		'Solo Leveling', 
-		'Solo Leveling 2: Arise from the Shadow',
-		'Sonic Szybki jak błyskawica',
-		'Sonic Szybki jak błyskawica 2',
-		'Sonic Szybki jak błyskawica 3',
-		'Sonic X',
-		'Sousou no Frieren', 
-		'South Park (1997-2023)',
-		'South Park - Bigger, Longer and Uncut (1999)',
-		'Spider-man', 
-		'Spider-man 2', 
-		'Spider-man 3', 
-		'Spider-man Uniwersum', 
-		'Spider-man Poprzez Multiwersum', 
-		'Stowarzyszenie Umarłych Poetów (1989)',
-		'Stalker',
-		'Straszny Dom', 
-		'Stuber (2019)',
-		'Studio Ghibli: Mój sąsiad Totoro',
-		'Studio Ghibli: Spirited Away - W krainie Bogów',
-		'Studio Ghibli: Ruchomy zamek Hauru',
-		'Superhero Movie', 
-		'Super Mario Bros', 
-		'Super Mario Bros Film', 
-		'Szczurwiel',
-		'Szklana pułapka (1988)',
-		'Szklana pułapka 2 (1990)',
-		'Szklana pułapka 3 (1995)',
-		'Ściema po polsku', 
-		'Śmierć Stalina (2017)',
-		'Świat według Kiepskich',
-		'Świat według Ludwiczka Sezon 1',
-		'Świat według Ludwiczka Sezon 2',
-		'Świat według Ludwiczka Sezon 3',
-		'Taksówkarz', 
-		'Tarzan',
-		'Taxi', 
-		'TESTOVIRON Wszystkie filmy Chronologicznie', 
-		'The Boys Sezon 1', 
-		'The Boys Sezon 2', 
-		'The Boys Sezon 3', 
-		'The Boys Sezon 4', 
-		'The Last of Us (2023)',
-		'Toradora!',
-		'Touhou Gensou Mangekyou - The Memories of Phantasm (2011-2023)',
-		'Toy Story (1995)',
-		'Toy Story 2 (1999)',
-		'Toy Story 3 (2010)',
-		'Toy Story 4 (2019)',
-		'Transporter',
-		'Transporter 2',
-		'Transporter 3',
-		'Troll (2022)',
-		'Turysta', 
-		'Tytus Romek i A`Tomek wśród złodzei marzeń', 
-		'Ucieczka z Nowego Yorku', 
-		'u Pana Boga za piecem (1998)',
-		'u Pana Boga w ogródku (2007)',
-		'Vaiana Skarb oceanu (2016)',
-		'Vaiana 2 (2024)',
-		'Vinland Saga Sezon 1', 
-		'Vinland Saga Sezon 2', 
-		'W 80 dni dookoła świata',
-		'Wajutsushi',
-		'Wakfu: Goultard Barbarzyńca', 
-		'Dofus Skarby Keruba', 
-		'Dofus: Księga 1 - Julith', 
-		'Wakfu', 
-		'Wakfu: Zegarmistrz Noximilien', 
-		'Wakfu: Legenda o Ogreście', 
-		'Wakfu Sezon 2', 
-		'Wakfu: W poszukiwaniu Sześciu Dofusów Eliatropów', 
-		'Wakfu Sezon 3', 
-		'Wakfu: Oropo Bitwa o Eliacube', 
-		'Wakfu Sezon 4', 
-		'Wall-E', 
-		'Wallace i Gromit Klątwa Królika', 
-		'Warfare (2025)',
-		'Who killed Captain Alex', 
-		'Wielki Stach (2007)',
-		'Władca Pierścieni Drużyna Pierścienia', 
-		'Władca Pierścieni Dwie Wieże', 
-		'Władca Pierścieni Powrót Króla', 
-		'Włoska Robota',
-		'Wodogrzmoty małe Sezon 1', 
-		'Wodogrzmoty małe Sezon 2', 
-		'Wodogrzmoty małe Odcinki specjalne', 
-		'Wściekłe Pięści Węża', 
-		'Wyspa Tajemnic', 
-		'Wyspa Totalnej Porażki',
-		'Wyścig', 
-		'Xiaolin Pojedynek Mistrzów Sezon 1', 
-		'Xiaolin Pojedynek Mistrzów Sezon 2', 
-		'Xiaolin Pojedynek Mistrzów Sezon 3', 
-		'Yosuga no Sora',
-		'Zabijaka', 
-		'Zakazane królestwo (2008)',
-		'Zoolander',
-		'Zwierzogród', 
-		'tag:Akcja',
-		'tag:Dokumentalny',
-		'tag:Dramat',
-		'tag:Erotyczny',
-		'tag:Fantasy',
-		'tag:Horror',
-		'tag:Historyczny',
-		'tag:Komedia',
-		'tag:Kryminał',
-		'tag:Obyczajowy',
-		'tag:Przygodowy',
-		'tag:Psychologiczny',
-		'tag:Romans',
-		'tag:Sci-Fi',
-		'tag:Stream',
-		'tag:Thriller',
-		'tag:Wojenny',
-		'typ:Anime',
-		'typ:Dokument',
-		'typ:Film',
-		'typ:Serial',
-		'typ:Stream',
-		'+3',
-		'+7',
-		'+12',
-		'+16',
-		'+18',
-    ];
+function highlightMatch(text, query) {
+  if (!query) return esc(text);
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  const idx = lower.indexOf(q);
+  if (idx === -1) return esc(text);
+  return esc(text.slice(0, idx)) +
+    '<mark class="hl">' + esc(text.slice(idx, idx + query.length)) + '</mark>' +
+    esc(text.slice(idx + query.length));
+}
 
-/*initiate the autocomplete function on the "myInput" element, and pass along the countries array as possible autocomplete values:*/
-autocomplete(document.getElementById("myInput"), filmy);
+function renderStars(n) {
+  n = Math.max(0, Math.min(5, n | 0));
+  let h = '';
+  for (let i = 0; i < n; i++)     h += '<span class="star-on">★</span>';
+  for (let i = n; i < 5; i++)     h += '<span class="star-off">☆</span>';
+  return h;
+}
+
+// Heroicons (solid). Read better at 10–12 px than the outline variants.
+const ICON_TAG  = '<svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 2.25a3 3 0 0 0-3 3v4.318a3 3 0 0 0 .879 2.121l9.58 9.581c.92.92 2.39 1.186 3.548.428a18.849 18.849 0 0 0 5.441-5.44c.758-1.16.492-2.629-.428-3.548l-9.58-9.581a3 3 0 0 0-2.122-.879H5.25ZM6.375 7.5a1.125 1.125 0 1 0 0-2.25 1.125 1.125 0 0 0 0 2.25Z"/></svg>';
+const ICON_TYPE = '<svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3 4.875C3 3.839 3.84 3 4.875 3h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 0 1 3 9.375v-4.5ZM13.5 4.875c0-1.036.84-1.875 1.875-1.875h4.5C20.91 3 21.75 3.84 21.75 4.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5a1.875 1.875 0 0 1-1.875-1.875v-4.5ZM3 15.375c0-1.036.84-1.875 1.875-1.875h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 0 1 3 19.875v-4.5ZM13.5 15.375c0-1.036.84-1.875 1.875-1.875h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5a1.875 1.875 0 0 1-1.875-1.875v-4.5Z"/></svg>';
+
+function renderCard(c, query) {
+  const r = RATINGS[c.rating] || RATINGS[0];
+  const ratingNum = c.rating || 0;
+
+  // "tag:..." queries highlight inside the tag chips; everything else
+  // highlights the title.
+  const isTagQuery = !!query && query.toLowerCase().startsWith('tag:');
+  const titleQuery = isTagQuery ? '' : (query || '');
+  const tagQuery   = isTagQuery ? query.slice(4).trim() : '';
+
+  let yearBlock;
+  const hasMeta = (c.tags && c.tags.length) || c.type || c.age != null;
+  if (hasMeta) {
+    const tagBtns = (c.tags || []).map(function (t) {
+      return '<span class="btn-tag">' + ICON_TAG + '<span>' + highlightMatch(t, tagQuery) + '</span></span>';
+    }).join(' ');
+    const typeBtn = c.type
+      ? '<span class="btn-tag">' + ICON_TYPE + '<span>' + esc(c.type) + '</span></span>'
+      : '';
+    const ageBtn = c.age != null
+      ? '<span class="btn-' + c.age + '">+' + c.age + '</span>'
+      : '';
+    const tail = (typeBtn || ageBtn);
+    const sep = (tagBtns && tail) ? '<br>' : '';
+    yearBlock = tagBtns + sep + ' ' + typeBtn + ' ' + ageBtn;
+  } else {
+    // Year is already inside the title (e.g. "13 Posterunek 2 (1997-1998)"),
+    // so leave the chip row empty here to avoid showing the year twice. The
+    // `.card-year:empty` CSS rule collapses the now-empty <h5> so it doesn't
+    // leave a phantom line below the title.
+    yearBlock = '';
+  }
+
+  const tlParts = [];
+  if (c.fileType) tlParts.push(esc(c.fileType));
+  if (c.fileSize) tlParts.push(esc(c.fileSize) + ' GB');
+  const tlBadge = tlParts.length
+    ? '<div class="cover-badge absolute top-1.5 left-1.5">' + tlParts.join(' · ') + '</div>'
+    : '';
+  const trBadge = c.quality
+    ? '<div class="cover-badge absolute top-1.5 right-1.5">' + esc(c.quality) + '</div>'
+    : '';
+  const langLines = c.language
+    ? c.language.split('/').map(function (s) { return s.trim(); }).filter(Boolean)
+    : [];
+  const brBadge = langLines.length
+    ? '<div class="cover-badge cover-badge--lang absolute bottom-1.5 right-1.5" title="' + esc(c.language) + '">' +
+        langLines.map(function (l) { return '<div>' + esc(l) + '</div>'; }).join('') +
+      '</div>'
+    : '';
+
+  // Episode count is kept for serials/animes regardless, but suppressed for
+  // single-disc films (count <= 1).
+  const hoverLines = [];
+  if (c.length) hoverLines.push('<div>' + esc(c.length) + '</div>');
+  const epCount = c.episodes ? parseInt(c.episodes, 10) : 0;
+  const showEp = c.episodes && (c.type === 'Serial' || c.type === 'Anime' || epCount > 1);
+  if (showEp) hoverLines.push('<div>' + esc(c.episodes) + ' odc.</div>');
+  const hoverOverlay = hoverLines.length
+    ? '<div class="cover-hover">' + hoverLines.join('') + '</div>'
+    : '';
+
+  return '' +
+    '<div class="p-2 flex">' +
+      '<div class="card-modern w-[calc(50vw-20px)] max-w-[200px] sm:w-[calc(33vw-20px)] sm:max-w-[220px] md:w-64 md:max-w-none h-full flex flex-col">' +
+        '<div class="relative">' +
+          '<img src="' + c.cover + '" alt="' + esc(c.alt) + '" width="256" height="396" class="block w-full" />' +
+          hoverOverlay + tlBadge + trBadge + brBadge +
+        '</div>' +
+        '<div class="px-3 py-2 flex flex-col items-center gap-1.5 flex-1">' +
+          '<div class="flex flex-col items-center justify-center gap-1 flex-1 min-h-[60px] w-full">' +
+            '<h5 class="card-title">' + highlightMatch(c.title, titleQuery) + '</h5>' +
+            '<h5 class="card-year">' + yearBlock + '</h5>' +
+          '</div>' +
+          '<img src="' + r.url + '" title="' + esc(r.title) + '" alt="' + ratingNum + '/5" width="100" height="31" class="block">' +
+          '<button type="button" class="btn-primary px-4 py-1 rounded-md text-white text-sm font-medium">Zobacz</button>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+}
+
+// sort: sheet | name-asc | name-desc | rating-desc | rating-asc-rated | date-desc | date-asc | length-desc
+const state = {
+  query: '',
+  sort: 'sheet',
+  types: null,
+  ratings: null,
+  tags: null,
+  ages: null,
+};
+
+// Polish collator for the alphabetical sort modes. `sensitivity: base` makes
+// case + diacritics blind ("Łowca" sorts among the L's, not at the end);
+// `numeric: true` keeps "Sezon 2" before "Sezon 10" instead of after.
+const PL_COLLATOR = new Intl.Collator('pl', { sensitivity: 'base', numeric: true });
+
+function sortFiltered(items, mode) {
+  const arr = items.slice();
+  switch (mode) {
+    case 'name-desc':
+      arr.sort(function (a, b) { return PL_COLLATOR.compare(b.alt || '', a.alt || ''); });
+      break;
+    case 'rating-desc':
+      arr.sort(function (a, b) { return (b.rating || 0) - (a.rating || 0); });
+      break;
+    case 'rating-asc-rated':
+      // Worst-to-best — but `applyFilters` strips unrated (rating 0) entries
+      // before calling us, so the result is only rated cards.
+      arr.sort(function (a, b) { return (a.rating || 0) - (b.rating || 0); });
+      break;
+    case 'date-desc':
+      arr.sort(function (a, b) { return (b._sortYear || 0) - (a._sortYear || 0); });
+      break;
+    case 'date-asc':
+      // Missing years go to the END for asc too (treat as +Infinity).
+      arr.sort(function (a, b) { return (a._sortYear || Infinity) - (b._sortYear || Infinity); });
+      break;
+    case 'length-desc':
+      arr.sort(function (a, b) { return (b._sortLen || 0) - (a._sortLen || 0); });
+      break;
+    case 'sheet':
+      // No-op — Array.filter preserves order, and allData already arrives in
+      // gviz row order, so a plain slice is exactly the sheet's layout.
+      break;
+    case 'name-asc':
+    default:
+      arr.sort(function (a, b) { return PL_COLLATOR.compare(a.alt || '', b.alt || ''); });
+  }
+  return arr;
+}
+
+// Populated by buildFilterSidebar. Maps each panel id to its full item list
+// and corresponding state-Set key, so handleSidebarClick stays generic.
+const filterDefs = {
+  typ:   { items: [], key: 'types'   },
+  ocena: { items: [], key: 'ratings' },
+  tag:   { items: [], key: 'tags'    },
+  wiek:  { items: [], key: 'ages'    },
+};
+
+let allData = null;
+let currentController = null;
+const container = document.getElementById('container');
+
+function matchesFilters(c) {
+  // For every panel, an *empty* Set means "this panel isn't restricting" —
+  // otherwise "Odznacz wszystkie" on one panel + a single pick on another
+  // panel would block everything, because `Set().has(x)` is always false.
+  if (state.types && state.types.size && !state.types.has(c.type || UNTYPED)) return false;
+  if (state.ratings && state.ratings.size && !state.ratings.has(String(c.rating || 0))) return false;
+  if (state.ages && state.ages.size) {
+    const k = c.age != null ? String(c.age) : UNAGE;
+    if (!state.ages.has(k)) return false;
+  }
+  if (state.tags && state.tags.size) {
+    if (c.tags && c.tags.length) {
+      if (!c.tags.some(function (t) { return state.tags.has(t); })) return false;
+    } else {
+      if (!state.tags.has(UNTAGGED)) return false;
+    }
+  }
+
+  if (state.query) {
+    const q = state.query;
+    if (q.toLowerCase().startsWith('tag:')) {
+      const tq = q.slice(4).trim().toLowerCase();
+      if (tq) {
+        if (!c.tags || !c.tags.some(function (t) { return t.toLowerCase().includes(tq); })) return false;
+      }
+    } else {
+      if (!c.title.toLowerCase().includes(q.toLowerCase())) return false;
+    }
+  }
+  return true;
+}
+
+function applyFilters() {
+  if (!allData) return;
+  if (currentController) currentController.stop();
+  container.innerHTML = '';
+  if (window.scrollY > 0) window.scrollTo(0, 0);
+
+  let filtered = allData.filter(matchesFilters);
+  // "Gówna totalne" — sort by worst rating first, but exclude unrated entries
+  // (otherwise everything-with-no-rating would dominate the top of the list).
+  if (state.sort === 'rating-asc-rated') {
+    filtered = filtered.filter(function (c) { return (c.rating || 0) > 0; });
+  }
+  if (filtered.length === 0) {
+    container.innerHTML =
+      '<div class="brak">' +
+        'Nie znaleziono żadnych pozycji.' +
+        '<img src="gfx/archiwa.png" alt="" onerror="this.style.display=\'none\'" class="block mx-auto mt-6 max-w-md rounded-lg shadow-xl">' +
+      '</div>';
+    currentController = null;
+    return;
+  }
+  const sorted = sortFiltered(filtered, state.sort);
+  currentController = startProgressiveRender(sorted, container, state.query);
+}
+
+function startProgressiveRender(data, container, query) {
+  let cursor = 0;
+  let stopped = false;
+
+  const sentinel = document.createElement('div');
+  sentinel.style.cssText = 'flex-basis:100%;height:1px;';
+  container.appendChild(sentinel);
+
+  function renderBatch() {
+    if (stopped || cursor >= data.length) return false;
+    const slice = data.slice(cursor, cursor + BATCH_SIZE);
+    cursor += slice.length;
+
+    const tmp = document.createElement('template');
+    tmp.innerHTML = slice.map(function (c) { return renderCard(c, query); }).join('');
+    const cards = Array.from(tmp.content.children);
+    for (const c of cards) {
+      c.classList.add('card-fade');
+      container.insertBefore(c, sentinel);
+    }
+    void container.offsetHeight;
+
+    // Reveal each card only when its cover image is decoded AND its stagger
+    // delay has elapsed — otherwise we'd fade in an empty card and the image
+    // would pop in afterwards. The cover-load step itself goes through
+    // attachCoverFallback which retries .jpeg → .png before giving up.
+    cards.forEach(function (c, i) {
+      const cover = c.querySelector('img');
+      const delay = i * STAGGER_MS;
+      let delayDone = false, imgDone = false;
+      function check() { if (delayDone && imgDone && !stopped) c.classList.add('card-shown'); }
+      setTimeout(function () { delayDone = true; check(); }, delay);
+
+      if (!cover || cover.complete) {
+        imgDone = true;
+        check();
+      } else {
+        attachCoverFallback(cover, function () { imgDone = true; check(); });
+      }
+    });
+    return true;
+  }
+
+  function fillUntilOutOfView() {
+    if (stopped) return;
+    while (cursor < data.length) {
+      const rect = sentinel.getBoundingClientRect();
+      if (rect.top > window.innerHeight + PREFETCH_MARGIN_PX) break;
+      renderBatch();
+    }
+    if (cursor >= data.length) {
+      observer.disconnect();
+      if (sentinel.parentNode) sentinel.remove();
+    }
+  }
+
+  const observer = new IntersectionObserver(function (entries) {
+    if (entries[0].isIntersecting) fillUntilOutOfView();
+  }, { rootMargin: PREFETCH_MARGIN_PX + 'px 0px' });
+
+  fillUntilOutOfView();
+  if (cursor < data.length) observer.observe(sentinel);
+
+  return {
+    stop: function () {
+      stopped = true;
+      observer.disconnect();
+      if (sentinel.parentNode) sentinel.remove();
+    }
+  };
+}
+
+function refreshToggleLabel(section) {
+  const def = filterDefs[section];
+  if (!def) return;
+  const set = state[def.key];
+  const sidebar = document.getElementById('filtry');
+  const btn = sidebar.querySelector('.filter-btn-all[data-section="' + section + '"]');
+  if (btn) btn.textContent = set.size === def.items.length ? 'Odznacz wszystkie' : 'Zaznacz wszystkie';
+}
+
+function handleSidebarClick(e) {
+  const btn = e.target.closest('button');
+  if (!btn) return;
+
+  if (btn.id === 'myRefresh') {
+    onRefreshClick(btn);
+    return;
+  }
+
+  const section = btn.dataset.section;
+  if (!section || !filterDefs[section]) return;
+  const def = filterDefs[section];
+  const set = state[def.key];
+  const sidebar = document.getElementById('filtry');
+
+  if (btn.classList.contains('filter-btn-all')) {
+    const allActive = set.size === def.items.length;
+    const targets = sidebar.querySelectorAll('.filter-btn[data-section="' + section + '"]');
+    if (allActive) {
+      set.clear();
+      targets.forEach(function (b) { b.classList.remove('active'); });
+    } else {
+      def.items.forEach(function (v) { set.add(String(v)); });
+      targets.forEach(function (b) { b.classList.add('active'); });
+    }
+    refreshToggleLabel(section);
+    applyFilters();
+    return;
+  }
+
+  if (btn.classList.contains('filter-btn')) {
+    const v = btn.dataset.value;
+    if (set.has(v)) {
+      set.delete(v);
+      btn.classList.remove('active');
+    } else {
+      set.add(v);
+      btn.classList.add('active');
+    }
+    refreshToggleLabel(section);
+    applyFilters();
+  }
+}
+
+function buildFilterSidebar(data) {
+  const types = new Set(), tags = new Set(), ages = new Set();
+  let hasUntyped = false, hasUntagged = false, hasUnaged = false;
+  data.forEach(function (c) {
+    if (c.type) types.add(c.type); else hasUntyped = true;
+    if (c.tags && c.tags.length) c.tags.forEach(function (t) { tags.add(t); });
+    else hasUntagged = true;
+    if (c.age != null) ages.add(c.age); else hasUnaged = true;
+  });
+
+  const typesList = [...types].sort();
+  if (hasUntyped) typesList.push(UNTYPED);
+
+  const ratingsList = ['5', '4', '3', '2', '1', '0'];
+
+  const tagsList = [...tags].sort();
+  if (hasUntagged) tagsList.push(UNTAGGED);
+
+  const agesList = [...ages].sort(function (a, b) { return a - b; }).map(String);
+  if (hasUnaged) agesList.push(UNAGE);
+
+  // Nothing-selected by default; combined with the empty-Set guard in
+  // matchesFilters, every card is visible on first load and the user narrows
+  // by clicking filters in.
+  state.types   = new Set();
+  state.ratings = new Set();
+  state.tags    = new Set();
+  state.ages    = new Set();
+
+  filterDefs.typ.items   = typesList;
+  filterDefs.ocena.items = ratingsList;
+  filterDefs.tag.items   = tagsList;
+  filterDefs.wiek.items  = agesList;
+
+  // labelFn returns raw HTML — labelRating emits styled <span> stars — so each
+  // label function is responsible for escaping any data-derived strings.
+  function labelType(t)   { return t === UNTYPED  ? 'Bez typu'  : esc(t); }
+  function labelTag(t)    { return t === UNTAGGED ? 'Bez tagów' : esc(t); }
+  function labelAge(a)    { return a === UNAGE    ? 'Bez wieku' : '+' + esc(a); }
+  function labelRating(r) { return renderStars(parseInt(r, 10)); }
+
+  function panelHtml(section, title, items, labelFn) {
+    const buttons = items.map(function (v) {
+      return '<button type="button" class="filter-btn" data-section="' + section +
+             '" data-value="' + esc(String(v)) + '">' + labelFn(v) + '</button>';
+    }).join('');
+    return '<div class="filtry-naglowek">' + esc(title) + '</div>' + buttons +
+           '<button type="button" class="filter-btn-all" data-section="' + section + '">Zaznacz wszystkie</button>';
+  }
+
+  const sidebar = document.getElementById('filtry');
+  sidebar.innerHTML =
+    '<button id="myRefresh" type="button" title="Odśwież dane katalogu bazując na magicznym arkuszu Natpyriosa" class="btn-primary px-3 py-1.5 rounded-lg text-white text-xs font-semibold w-full">Pobierz dane</button>' +
+    panelHtml('typ',   'Typ',   typesList,   labelType)   +
+    panelHtml('ocena', 'Ocena', ratingsList, labelRating) +
+    panelHtml('tag',   'Tag',   tagsList,    labelTag)    +
+    panelHtml('wiek',  'Wiek',  agesList,    labelAge);
+
+  // buildFilterSidebar runs again on every "Pobierz dane" refresh, so attach
+  // the delegated click handler only once — innerHTML rewrites don't drop it.
+  if (!sidebar.dataset.wired) {
+    sidebar.dataset.wired = '1';
+    sidebar.addEventListener('click', handleSidebarClick);
+  }
+}
+
+function smoothScrollTop() {
+  const startY = window.scrollY;
+  if (startY === 0) return;
+  const duration = Math.min(700, Math.max(280, startY * 0.25));
+  const startTime = performance.now();
+  let aborted = false;
+  function abort() { aborted = true; }
+  window.addEventListener('wheel',      abort, { once: true, passive: true });
+  window.addEventListener('touchstart', abort, { once: true, passive: true });
+  function step(now) {
+    if (aborted) return;
+    const t = Math.min((now - startTime) / duration, 1);
+    const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic — fast start, slow finish
+    window.scrollTo(0, startY * (1 - eased));
+    if (t < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+}
+
+function wireSearchInput() {
+  const input = document.getElementById('myInput');
+  const clear = document.getElementById('myClear');
+
+  function sync() {
+    const raw = input.value;
+    state.query = raw.trim();
+    if (clear) clear.classList.toggle('hidden', raw.length === 0);
+    applyFilters();
+  }
+
+  input.addEventListener('input', sync);
+
+  if (clear) {
+    clear.addEventListener('click', function () {
+      input.value = '';
+      state.query = '';
+      clear.classList.add('hidden');
+      applyFilters();
+      input.focus();
+    });
+  }
+}
+
+function wireSortControl() {
+  const sel = document.getElementById('sort');
+  if (!sel) return;
+  sel.value = state.sort;
+  sel.addEventListener('change', function () {
+    state.sort = this.value;
+    applyFilters();
+  });
+}
+
+function wireFiltryToggle() {
+  const btn = document.getElementById('filtryToggle');
+  const filtry = document.getElementById('filtry');
+  if (!btn || !filtry) return;
+  btn.addEventListener('click', function () {
+    filtry.classList.toggle('is-open');
+  });
+}
+
+function rowToEntry(row) {
+  function cell(i) {
+    const c = row && row.c && row.c[i];
+    if (!c) return '';
+    // Prefer the formatted display value (`f`) over the raw value (`v`):
+    // gviz returns time cells as "Date(1899,11,30,1,33,47)" in `v` but the
+    // pretty "1:33:47" in `f`; numbers like 3.98 GB come through as `f="3,98"`
+    // already locale-formatted with a comma — saves us re-formatting.
+    const v = c.f != null ? c.f : c.v;
+    return v == null ? '' : String(v).trim();
+  }
+
+  const nazwa = cell(SHEET_COL.NAZWA);
+  if (!nazwa) return null;
+
+  const rok      = cell(SHEET_COL.ROK);
+  const odc      = cell(SHEET_COL.ODC);
+  const jezyk    = cell(SHEET_COL.LANGUAGE);
+  const dlugosc  = cell(SHEET_COL.DLUGOSC);
+  const jakosc   = cell(SHEET_COL.JAKOSC);
+  const filetype = cell(SHEET_COL.FILETYPE);
+  const gb       = cell(SHEET_COL.GB);
+  const ocena    = cell(SHEET_COL.OCENA);
+  const wiek     = cell(SHEET_COL.WIEK);
+  const tagi     = cell(SHEET_COL.TAGI);
+  const rodzaj   = cell(SHEET_COL.RODZAJ);
+
+  const title  = rok ? (nazwa + ' (' + rok + ')') : nazwa;
+  const cover  = 'cover/' + encodeURIComponent(sanitizeCoverName(nazwa)) + '.jpeg';
+  const tags   = tagi ? tagi.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [];
+  const rating = parseInt(ocena, 10) || 0;
+  const ageM   = wiek.match(/(\d+)/);
+  const age    = ageM ? parseInt(ageM[1], 10) : null;
+
+  const entry = { title: title, cover: cover, alt: nazwa, rating: rating };
+  const hasMeta = rodzaj || tags.length || age != null;
+  if (hasMeta) {
+    if (tags.length) entry.tags = tags;
+    if (rodzaj)      entry.type = rodzaj;
+    if (age != null) entry.age  = age;
+  }
+
+  if (dlugosc)  entry.length   = dlugosc;
+  if (odc)      entry.episodes = odc;
+  if (jezyk)    entry.language = jezyk;
+  if (jakosc)   entry.quality  = jakosc;
+  if (filetype) entry.fileType = filetype;
+  if (gb)       entry.fileSize = gb;
+
+  // Pre-computed sort keys — parsed once here so sortFiltered() can do plain
+  // numeric compares instead of regex/split per swap.
+  if (rok) {
+    const ym = rok.match(/(\d{4})/);
+    if (ym) entry._sortYear = parseInt(ym[1], 10);
+  }
+  if (dlugosc) {
+    const parts = dlugosc.split(':').map(function (s) { return parseInt(s, 10) || 0; });
+    let secs = 0;
+    if (parts.length === 3) secs = parts[0] * 3600 + parts[1] * 60 + parts[2];
+    else if (parts.length === 2) secs = parts[0] * 60 + parts[1];
+    if (secs) entry._sortLen = secs;
+  }
+
+  return entry;
+}
+
+function parseGvizResponse(text) {
+  const start = text.indexOf('{');
+  const end   = text.lastIndexOf('}');
+  if (start === -1 || end === -1) throw new Error('unexpected gviz payload');
+  const json = JSON.parse(text.slice(start, end + 1));
+  if (!json.table || !json.table.rows) throw new Error('no table data in gviz response');
+  return json.table.rows.map(rowToEntry).filter(Boolean);
+}
+
+function readCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    if (!c || typeof c.ts !== 'number' || !Array.isArray(c.data)) return null;
+    return c;
+  } catch (e) { return null; }
+}
+
+function writeCache(data) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({ data: data, ts: Date.now() }));
+  } catch (e) {
+    // Storage full or disabled — non-fatal, page still works for this session
+    console.warn('localStorage write failed:', e);
+  }
+}
+
+async function loadData(forceFresh) {
+  if (!forceFresh) {
+    const cached = readCache();
+    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.data;
+  }
+  try {
+    const r = await fetch(SHEETS_GVIZ_URL);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const text = await r.text();
+    const entries = parseGvizResponse(text);
+    writeCache(entries);
+    return entries;
+  } catch (err) {
+    // Network/CORS failure — fall back to whatever's cached, even if stale.
+    const stale = readCache();
+    if (stale) {
+      console.warn('Live fetch failed, using stale cache:', err);
+      return stale.data;
+    }
+    throw err;
+  }
+}
+
+// renderCard emits `.jpeg` URLs; on error walk through these fallback exts
+// before giving up and hiding the image.
+const COVER_FALLBACK_EXTS = ['.jpg', '.png', '.webp'];
+
+function attachCoverFallback(img, onSettled) {
+  let attempt = 0;
+  function settle() { if (onSettled) onSettled(); }
+
+  img.addEventListener('load', settle, { once: true });
+  img.addEventListener('error', function onError() {
+    if (attempt < COVER_FALLBACK_EXTS.length) {
+      img.addEventListener('error', onError, { once: true });
+      img.src = img.src.replace(/\.(jpeg|jpg|png|webp)(\?.*)?$/, COVER_FALLBACK_EXTS[attempt++] + '$2');
+    } else {
+      img.style.display = 'none';
+      settle();
+    }
+  }, { once: true });
+}
+
+function reloadAll(data) {
+  allData = data;
+  buildFilterSidebar(data);
+  applyFilters();
+}
+
+async function onRefreshClick(btn) {
+  const orig = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Pobieranie...';
+  try {
+    const data = await loadData(true);
+    reloadAll(data);
+    btn.textContent = 'Pobrano!';
+    setTimeout(function () { btn.textContent = orig; }, 1200);
+  } catch (err) {
+    console.error(err);
+    btn.textContent = 'Błąd';
+    setTimeout(function () { btn.textContent = orig; }, 2000);
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+(async function () {
+  const back = document.getElementById('myBtn');
+  if (back) back.addEventListener('click', smoothScrollTop);
+
+  // Wire DOM-static listeners once, before fetch. applyFilters() bails early
+  // when allData is null so a stray keystroke before the first load is fine.
+  wireSearchInput();
+  wireSortControl();
+  wireFiltryToggle();
+
+  try {
+    const data = await loadData(false);
+    reloadAll(data);
+  } catch (err) {
+    container.innerHTML =
+      '<p style="padding:100px;text-align:center;color:#fff;">' +
+      'Błąd ładowania danych z Google Sheets: ' + esc(err.message) + '<br>' +
+      'Sprawdź połączenie i odśwież stronę, albo użyj "Pobierz dane" w panelu po lewej.' +
+      '</p>';
+  }
+})();
