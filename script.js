@@ -17,9 +17,11 @@ const UNAGE = '__no_age__';
 // Live data source — Google Sheets via the gviz JSON endpoint. Picked over
 // `/export?format=csv` because gviz sends CORS headers consistently, whereas
 // the CSV export redirects through googleusercontent which can refuse the
-// cross-origin fetch from the browser.
-const SHEETS_GVIZ_URL = 'https://docs.google.com/spreadsheets/d/1CuHfluEd-9hVun6ANAeK41lNx949Aa_j0YVzWbgGIY8/gviz/tq?tqx=out:json';
-const CACHE_KEY    = 'paf_live_db_v9';
+// cross-origin fetch from the browser. `range=A:S` clips off the footer/
+// summary columns (T+ — "Elementy folderu:", "Waga całkowita:" etc.) that
+// the sheet auto-populates but `rowToEntry` never reads.
+const SHEETS_GVIZ_URL = 'https://docs.google.com/spreadsheets/d/1CuHfluEd-9hVun6ANAeK41lNx949Aa_j0YVzWbgGIY8/gviz/tq?tqx=out:json&range=A:S';
+const CACHE_KEY    = 'paf_live_db_v11';
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 const SHEET_COL = {
@@ -68,9 +70,11 @@ function highlightMatch(text, query) {
 }
 
 // Splits a trailing "(YYYY)" / "(YYYY-YYYY)" off the title so renderers can
-// dim the year visually while keeping it searchable.
+// dim the year visually while keeping it searchable. Tolerant of multi-range
+// values ("1997-2001-2003") and unicode dashes (Sheets sometimes autoformats
+// "-" to en-/em-dash, and whitespace can creep in around either).
 function titleHtml(title, query) {
-  const m = String(title || '').match(/^(.*?)(\s*\(\d{4}(?:-\d{4})?\))$/);
+  const m = String(title || '').match(/^(.*?)(\s*\(\d{4}(?:\s*[-–—]\s*\d{4})*\))$/);
   if (!m) return highlightMatch(title, query);
   return highlightMatch(m[1], query) +
     '<span class="title-year">' + highlightMatch(m[2], query) + '</span>';
@@ -218,6 +222,11 @@ function sortFiltered(items, mode) {
       break;
     case 'length-desc':
       arr.sort(function (a, b) { return (b._sortLen || 0) - (a._sortLen || 0); });
+      break;
+    case 'length-asc':
+      // Missing lengths sink to the end (treat as +Infinity), same convention
+      // as date-asc — so "shortest first" doesn't bury the rated entries.
+      arr.sort(function (a, b) { return (a._sortLen || Infinity) - (b._sortLen || Infinity); });
       break;
     case 'sheet':
       // No-op — Array.filter preserves order, and allData already arrives in
@@ -555,19 +564,41 @@ function rowToEntry(row) {
     // Prefer the formatted display value (`f`) over the raw value (`v`):
     // gviz returns time cells as "Date(1899,11,30,1,33,47)" in `v` but the
     // pretty "1:33:47" in `f`; numbers like 3.98 GB come through as `f="3,98"`
-    // already locale-formatted with a comma — saves us re-formatting.
-    const v = c.f != null ? c.f : c.v;
-    return v == null ? '' : String(v).trim();
+    // already locale-formatted with a comma — saves us re-formatting. But
+    // `f` can also come through as an **empty string** when Sheets can't
+    // format the cell (e.g. a year range "1997-1998" in a Date-formatted
+    // column) — fall through to `v` in that case so we don't drop the value
+    // entirely.
+    if (c.f != null && c.f !== '') return String(c.f).trim();
+    if (c.v == null) return '';
+    // When `f` is empty, `v` can still be a serialised Date — Sheets parsed
+    // the input, failed to format it, and we get "Date(1997,8,1)" rather than
+    // the text the user typed. Pull the year out so the title shows something
+    // recognisable instead of leaking the serialisation.
+    const raw = String(c.v).trim();
+    const dm = raw.match(/^Date\((-?\d+)/);
+    if (dm) return dm[1];
+    return raw;
   }
 
   const nazwa = cell(SHEET_COL.NAZWA);
   if (!nazwa) return null;
 
   const dysk     = cell(SHEET_COL.DYSK);
+  const seriaRaw = cell(SHEET_COL.SERIA);
   // Folder names on disk can't contain ":" — strip it so the search-ms URL
   // points at the actual folder ("Avatar: Legenda…" → "Avatar Legenda…").
-  const seria    = cell(SHEET_COL.SERIA).replace(/:/g, '');
-  const rok      = cell(SHEET_COL.ROK);
+  const seria    = seriaRaw.replace(/:/g, '');
+  let   rok      = cell(SHEET_COL.ROK);
+  // ROK fallback: when column F is empty, pull the year range from the
+  // SERIA's "(YYYY)" / "(YYYY-YYYY)" suffix. The catalogue routinely leaves
+  // per-entry ROK blank on series-root rows (e.g. "13 Posterunek" the series,
+  // vs "13 Posterunek 2" the season) and stores the year range only on the
+  // series name in column D.
+  if (!rok) {
+    const m = seriaRaw.match(/\((\d{4}(?:\s*[-–—]\s*\d{4})?)\)\s*$/);
+    if (m) rok = m[1];
+  }
   const odc      = cell(SHEET_COL.ODC);
   const jezyk    = cell(SHEET_COL.LANGUAGE);
   const dlugosc  = cell(SHEET_COL.DLUGOSC);
@@ -622,7 +653,10 @@ function rowToEntry(row) {
   if (seria) entry.seria = seria;
 
   // Pre-computed sort keys — parsed once here so sortFiltered() can do plain
-  // numeric compares instead of regex/split per swap.
+  // numeric compares instead of regex/split per swap. _yearStr keeps the
+  // raw value (e.g. "1997-2001") for year-suffixed cover lookups; _sortYear
+  // is just the first 4-digit chunk for date sorts.
+  if (rok)     entry._yearStr  = rok;
   if (yearNum) entry._sortYear = yearNum;
   if (dlugosc) {
     const parts = dlugosc.split(':').map(function (s) { return parseInt(s, 10) || 0; });
@@ -803,24 +837,36 @@ function coverNameVariants(nazwa) {
   });
 }
 
-function buildCoverCandidates(nazwa, year) {
+function buildCoverCandidates(nazwa, year, preferYear) {
   const urls = [];
-  // Year-specific candidates first ("Nazwa 2001.*" with all variants), so
-  // when the same Nazwa repeats across years the user can keep separate
-  // posters by suffixing the year — fallback chain still degrades to the
-  // year-less file if no year-specific exists.
-  if (year) {
-    coverNameVariants(nazwa + ' ' + year).forEach(function (variant) {
+  function pushYearSuffix() {
+    if (!year) return;
+    // Just the canonical "<Nazwa> <year>.<ext>" — no diacritic/case variants.
+    // The full year string is preserved (so "1997-2001" maps to a file named
+    // "Nazwa 1997-2001.jpg", not just "Nazwa 1997.jpg").
+    const yearName = sanitizeCoverName(nazwa) + ' ' + year;
+    COVER_EXTS.forEach(function (ext) {
+      urls.push('cover/' + encodeURIComponent(yearName) + ext);
+    });
+  }
+  function pushCanonical() {
+    coverNameVariants(nazwa).forEach(function (variant) {
       COVER_EXTS.forEach(function (ext) {
         urls.push('cover/' + encodeURIComponent(variant) + ext);
       });
     });
   }
-  coverNameVariants(nazwa).forEach(function (variant) {
-    COVER_EXTS.forEach(function (ext) {
-      urls.push('cover/' + encodeURIComponent(variant) + ext);
-    });
-  });
+  // Colliding entries (two+ rows share a Nazwa) try the year-suffixed form
+  // first so a per-year poster wins over the shared one. Unique entries try
+  // the canonical first and only fall back to year-suffixed if the user
+  // happened to name their file "Nazwa 2024.jpg".
+  if (preferYear) {
+    pushYearSuffix();
+    pushCanonical();
+  } else {
+    pushCanonical();
+    pushYearSuffix();
+  }
   urls.push(COVER_PLACEHOLDER);
   return urls;
 }
@@ -831,9 +877,11 @@ function buildCoverCandidates(nazwa, year) {
 // placeholder, so a slow chain walk doesn't hold up the UI. If every candidate
 // 404s the placeholder stays.
 function backgroundProbeCover(displayedImg, entry) {
-  const year = (entry._colliding && entry._sortYear) ? String(entry._sortYear) : '';
+  // Use the raw year string ("2024", "1997-2001", …) so year-suffixed files
+  // match the user's actual filename, not just the first 4-digit chunk.
+  const year = entry._yearStr || '';
   const cachedUrl = getCoverFromIndex(entry.alt || '', year);
-  let candidates = buildCoverCandidates(entry.alt || '', year)
+  let candidates = buildCoverCandidates(entry.alt || '', year, !!entry._colliding)
     .filter(function (u) { return u !== COVER_PLACEHOLDER; });
   // Cached hit goes first so a returning visitor's swap is one request
   // (usually an HTTP-cache hit on top of that).
