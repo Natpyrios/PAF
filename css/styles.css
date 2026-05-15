@@ -129,6 +129,7 @@ body {
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  cursor: pointer;
 }
 .card-modern:hover {
   transform: translateY(-3px);
@@ -320,4 +321,167 @@ body {
   color: #94a3b8;
   font-size: 16px;
   font-weight: 500;
+}
+
+/* ---------- detail modal (card click) ---------- */
+.paf-modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background-color: rgba(6, 8, 15, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 20px;
+  overflow-y: auto;
+}
+.paf-modal.open {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+.paf-modal-card {
+  position: relative;
+  background-color: #0f1320;
+  border: 1px solid rgba(20, 184, 166, 0.2);
+  border-radius: 12px;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6), 0 0 32px rgba(20, 184, 166, 0.12);
+  padding: 28px;
+  margin: 40px 0;
+  max-width: 900px;
+  width: 100%;
+  display: flex;
+  gap: 28px;
+}
+.paf-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #cbd5e1;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.15s, color 0.15s;
+}
+.paf-modal-close:hover {
+  background-color: rgba(20, 184, 166, 0.2);
+  color: #fff;
+}
+.paf-modal-cover {
+  flex-shrink: 0;
+  width: 240px;
+}
+.paf-modal-cover img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+.paf-modal-info {
+  flex: 1;
+  min-width: 0;
+}
+.paf-modal-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0 0 10px;
+  letter-spacing: -0.01em;
+  padding-right: 40px;
+}
+.paf-modal-rating {
+  margin-bottom: 14px;
+}
+.paf-modal-rating img {
+  display: inline-block;
+}
+.paf-modal-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.paf-modal-opis {
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin: 0 0 18px;
+  white-space: pre-wrap;
+  font-size: 14px;
+}
+.paf-modal-meta {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px 18px;
+}
+.paf-modal-meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.paf-modal-meta-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #64748b;
+  font-weight: 600;
+}
+.paf-modal-meta-value {
+  font-size: 13px;
+  color: #cbd5e1;
+}
+@media (max-width: 640px) {
+  .paf-modal-card {
+    flex-direction: column;
+    padding: 20px;
+    gap: 16px;
+  }
+  .paf-modal-cover {
+    width: 70%;
+    max-width: 200px;
+    margin: 0 auto;
+  }
+  .paf-modal-title {
+    font-size: 20px;
+  }
+}
+
+/* ---------- toast (clipboard confirmation for "Zobacz") ---------- */
+#paf-toast {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(15, 19, 32, 0.95);
+  color: #f1f5f9;
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(20, 184, 166, 0.2);
+  max-width: 90vw;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+#paf-toast.visible {
+  opacity: 1;
 }

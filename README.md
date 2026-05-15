@@ -9,7 +9,7 @@ Wszystko siedzi w [arkuszu Google](https://docs.google.com/spreadsheets/d/1CuHfl
 | kolumna       | co tam wpisać |
 |---------------|---------------|
 | **B — Dysk**   | `Bajki i Anime` lub `Filmy i Seriale` — mapuje się na literę dysku (`P` / `Q`) dla przycisku "Zobacz" |
-| **D — Seria**  | nazwa folderu na dysku (przycisk "Zobacz" otwiera go w Eksploratorze) |
+| **D — Seria**  | nazwa folderu na dysku (przycisk "Zobacz" kopiuje ścieżkę do schowka, wklej w pasku adresu Eksploratora) |
 | **E — Nazwa**  | tytuł bez roku (to też nazwa pliku okładki) |
 | **F — Rok**    | `2024` lub zakres `2003-2004` |
 | **G — Odc**    | liczba odcinków |
@@ -22,6 +22,7 @@ Wszystko siedzi w [arkuszu Google](https://docs.google.com/spreadsheets/d/1CuHfl
 | **P — wiek**   | `7+`, `12+`, `16+`, `18+`, `3+` lub puste |
 | **Q — Tagi**   | po przecinku, np. `Dramat, Historyczny` |
 | **R — Rodzaj** | `Film` / `Serial` / `Anime` / `Dokument` / `Stream` |
+| **S — Opis**   | dłuższy opis pokazywany w modalu po kliknięciu kafelka |
 
 Kliknij **"Pobierz dane"** w lewym panelu żeby od razu zaciągnąć zmiany — bez tego cache trzyma się godziny. Kolejność wierszy w arkuszu = kolejność wyświetlania.
 
