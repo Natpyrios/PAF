@@ -200,19 +200,83 @@ body {
 .btn-18 { color: #f87171; border-color: rgba(248, 113, 113, 0.3);  background-color: rgba(248, 113, 113, 0.08); }
 
 
-/* ---------- filter sidebar ---------- */
+/* ---------- filter sidebar ----------
+   Layout flips at the Tailwind `md` breakpoint (768 px):
+   - Mobile: filters sit inline above the cards as an accordion — each category
+     collapses to just its header, click expands the buttons below.
+   - Desktop: filters are a fixed left-side panel and all sections are visible
+     at once (the accordion mechanic is a no-op there). */
+.filtry-section {
+  display: flex;
+  flex-direction: column;
+}
+.filtry-section + .filtry-section {
+  margin-top: 6px;
+}
 .filtry-naglowek {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  background: transparent;
+  border: none;
   color: #94a3b8;
-  margin: 0 0 4px 0;
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 1.5px;
   font-weight: 600;
+  padding: 6px 0 4px;
+  cursor: pointer;
+  text-align: left;
 }
-.filtry-naglowek:not(:first-child) {
-  margin-top: 14px;
+.filtry-naglowek::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg);
+  margin-left: auto;
+  margin-right: 4px;
+  transition: transform 0.2s ease;
 }
-/* slim teal scrollbar for the sidebar */
+.filtry-section.is-expanded .filtry-naglowek::after {
+  transform: rotate(-135deg);
+}
+.filtry-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Mobile: collapse content unless the section is expanded. Buttons wrap into
+   a horizontal chip row when shown so the section doesn't dominate the viewport. */
+@media (max-width: 767px) {
+  .filtry-section-content {
+    display: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .filtry-section.is-expanded .filtry-section-content {
+    display: flex;
+  }
+  .filter-btn-all {
+    margin-top: 0;
+    width: 100%;
+  }
+}
+
+/* Desktop: hide the chevron and disable the toggle cursor — content is always on. */
+@media (min-width: 768px) {
+  .filtry-naglowek {
+    cursor: default;
+  }
+  .filtry-naglowek::after {
+    display: none;
+  }
+}
+
+/* slim teal scrollbar for the sidebar (desktop only — mobile is in normal flow) */
 #filtry::-webkit-scrollbar { width: 6px; }
 #filtry::-webkit-scrollbar-track { background: transparent; }
 #filtry::-webkit-scrollbar-thumb {
@@ -221,15 +285,6 @@ body {
 }
 #filtry::-webkit-scrollbar-thumb:hover { background: rgba(20, 184, 166, 0.45); }
 #filtry { scrollbar-width: thin; scrollbar-color: rgba(20, 184, 166, 0.25) transparent; }
-
-/* Mobile: sidebar collapses into a full-width overlay below the search bar,
-   toggled by the "Filtry" button. The Tailwind classes on #filtry already
-   position it for both layouts; this rule just hides it on mobile when the
-   toggle hasn't been pressed yet. Threshold mirrors Tailwind's `md` default
-   (768 px) — they MUST stay in sync if you ever override the breakpoint. */
-@media (max-width: 767px) {
-  #filtry:not(.is-open) { display: none; }
-}
 .filter-btn {
   font-size: 12px;
   background-color: rgba(255, 255, 255, 0.03);
@@ -315,6 +370,18 @@ body {
 .card-fade.card-shown {
   opacity: 1;
   transform: translateY(0);
+}
+/* Hide the <img> itself during the fallback chain walk. Parent opacity:0
+   already hides it visually, but a few browsers still paint the broken-image
+   indicator one frame ahead of the opacity rule when src is reset many times
+   in quick succession — that's the "flicker" symptom. visibility:hidden
+   keeps the layout box (so aspect-ratio is preserved) without ever painting
+   the broken state. */
+.card-fade img {
+  visibility: hidden;
+}
+.card-fade.card-shown img {
+  visibility: visible;
 }
 
 /* ---------- empty state ---------- */
