@@ -19,13 +19,13 @@ const UNAGE = '__no_age__';
 // the CSV export redirects through googleusercontent which can refuse the
 // cross-origin fetch from the browser.
 const SHEETS_GVIZ_URL = 'https://docs.google.com/spreadsheets/d/1CuHfluEd-9hVun6ANAeK41lNx949Aa_j0YVzWbgGIY8/gviz/tq?tqx=out:json';
-const CACHE_KEY    = 'paf_live_db_v7';
+const CACHE_KEY    = 'paf_live_db_v8';
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 const SHEET_COL = {
   DYSK: 1, SERIA: 3, NAZWA: 4, ROK: 5, ODC: 6, LANGUAGE: 7,
   DLUGOSC: 9, JAKOSC: 10, FILETYPE: 11, GB: 12,
-  OCENA: 14, WIEK: 15, TAGI: 16, RODZAJ: 17,
+  OCENA: 14, WIEK: 15, TAGI: 16, RODZAJ: 17, OPIS: 18,
 };
 
 // Maps the sheet's "Dysk" column to the actual drive letter where that
@@ -79,19 +79,15 @@ function renderStars(n) {
 const ICON_TAG  = '<svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 2.25a3 3 0 0 0-3 3v4.318a3 3 0 0 0 .879 2.121l9.58 9.581c.92.92 2.39 1.186 3.548.428a18.849 18.849 0 0 0 5.441-5.44c.758-1.16.492-2.629-.428-3.548l-9.58-9.581a3 3 0 0 0-2.122-.879H5.25ZM6.375 7.5a1.125 1.125 0 1 0 0-2.25 1.125 1.125 0 0 0 0 2.25Z"/></svg>';
 const ICON_TYPE = '<svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3 4.875C3 3.839 3.84 3 4.875 3h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 0 1 3 9.375v-4.5ZM13.5 4.875c0-1.036.84-1.875 1.875-1.875h4.5C20.91 3 21.75 3.84 21.75 4.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5a1.875 1.875 0 0 1-1.875-1.875v-4.5ZM3 15.375c0-1.036.84-1.875 1.875-1.875h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 0 1 3 19.875v-4.5ZM13.5 15.375c0-1.036.84-1.875 1.875-1.875h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5a1.875 1.875 0 0 1-1.875-1.875v-4.5Z"/></svg>';
 
-// "Zobacz" button target — uses Windows' `search-ms:` protocol because
-// `file:///` URLs are blocked from http origins. Browser asks for permission
-// once, then routes the click straight to Explorer with results scoped to
-// the chosen folder.
-function zobaczHref(c) {
-  if (c.drive && c.seria) return 'search-ms:crumb=location:' + encodeURIComponent(c.drive + ':\\' + c.seria);
-  if (c.drive)            return 'search-ms:crumb=location:' + encodeURIComponent(c.drive + ':\\');
-  return 'search-ms:query=' + encodeURIComponent(c.alt);
-}
-function zobaczTitle(c) {
-  if (c.drive && c.seria) return 'Otwórz w Eksploratorze: ' + c.drive + ':\\' + c.seria;
-  if (c.drive)            return 'Otwórz w Eksploratorze: ' + c.drive + ':\\';
-  return 'Szukaj w Eksploratorze: ' + c.alt;
+// "Zobacz" target — copied to the clipboard on click. We can't open a folder
+// in Explorer directly from an http origin: `file:///` is blocked, `search-ms:`
+// is unreliable cross-browser (Firefox ignores it; Edge in Win 11 often
+// drops the `crumb=location` argument). A copy-to-clipboard + toast is the
+// portable substitute — user pastes the path in Explorer's address bar.
+function buildZobaczPath(c) {
+  if (c.drive && c.seria) return c.drive + ':\\' + c.seria;
+  if (c.drive)            return c.drive + ':\\';
+  return c.alt;
 }
 
 function renderCard(c, query) {
@@ -160,7 +156,7 @@ function renderCard(c, query) {
     '<div class="p-2 flex">' +
       '<div class="card-modern w-[calc(50vw-20px)] max-w-[200px] sm:w-[calc(33vw-20px)] sm:max-w-[220px] md:w-64 md:max-w-none h-full flex flex-col">' +
         '<div class="relative">' +
-          '<img src="' + c.cover + '" alt="' + esc(c.alt) + '" width="256" height="396" class="block w-full" />' +
+          '<img src="' + c.cover + '" alt="' + esc(c.alt) + '" width="256" height="396" class="block w-full aspect-[256/396] object-fill" />' +
           hoverOverlay + tlBadge + trBadge + brBadge +
         '</div>' +
         '<div class="px-3 py-2 flex flex-col items-center gap-1.5 flex-1">' +
@@ -169,7 +165,7 @@ function renderCard(c, query) {
             '<h5 class="card-year">' + yearBlock + '</h5>' +
           '</div>' +
           '<img src="' + r.url + '" title="' + esc(r.title) + '" alt="' + ratingNum + '/5" width="100" height="31" class="block">' +
-          '<a href="' + zobaczHref(c) + '" title="' + esc(zobaczTitle(c)) + '" class="btn-primary inline-block no-underline px-4 py-1 rounded-md text-white text-sm font-medium">Zobacz</a>' +
+          '<button type="button" data-zobacz="' + esc(buildZobaczPath(c)) + '" title="' + esc('Skopiuj do schowka, wklej w Eksploratorze:\n' + buildZobaczPath(c)) + '" class="btn-primary px-4 py-1 rounded-md text-white text-sm font-medium">Zobacz</button>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -311,10 +307,13 @@ function startProgressiveRender(data, container, query) {
     const tmp = document.createElement('template');
     tmp.innerHTML = slice.map(function (c) { return renderCard(c, query); }).join('');
     const cards = Array.from(tmp.content.children);
-    for (const c of cards) {
-      c.classList.add('card-fade');
-      container.insertBefore(c, sentinel);
-    }
+    cards.forEach(function (card, i) {
+      card.classList.add('card-fade');
+      // Pin the source entry on the DOM so the modal-open click handler can
+      // look it up without re-deriving it from a serialised data-* attribute.
+      card._pafEntry = slice[i];
+      container.insertBefore(card, sentinel);
+    });
     void container.offsetHeight;
 
     // Reveal each card only when its cover image is decoded AND its stagger
@@ -578,6 +577,7 @@ function rowToEntry(row) {
   const wiek     = cell(SHEET_COL.WIEK);
   const tagi     = cell(SHEET_COL.TAGI);
   const rodzaj   = cell(SHEET_COL.RODZAJ);
+  const opis     = cell(SHEET_COL.OPIS);
 
   const title  = rok ? (nazwa + ' (' + rok + ')') : nazwa;
   const cover  = 'cover/' + encodeURIComponent(sanitizeCoverName(nazwa)) + '.jpeg';
@@ -600,6 +600,7 @@ function rowToEntry(row) {
   if (jakosc)   entry.quality  = jakosc;
   if (filetype) entry.fileType = filetype;
   if (gb)       entry.fileSize = gb;
+  if (opis)     entry.opis     = opis;
 
   // "Zobacz" target — drive comes from the Dysk column via DRIVE_MAP, folder
   // name from the Seria column. Both kept on the entry so renderCard can
@@ -710,6 +711,119 @@ function reloadAll(data) {
   applyFilters();
 }
 
+let _toastTimer = null;
+function showToast(msg) {
+  let t = document.getElementById('paf-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'paf-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('visible');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(function () { t.classList.remove('visible'); }, 2500);
+}
+
+function copyZobaczPath(btn) {
+  const path = btn.dataset.zobacz;
+  if (!path) return;
+  if (!navigator.clipboard) {
+    showToast('Schowek niedostępny w tej przeglądarce');
+    return;
+  }
+  navigator.clipboard.writeText(path).then(
+    function () { showToast('Skopiowano: ' + path); },
+    function () { showToast('Nie udało się skopiować'); }
+  );
+}
+
+function metaItem(label, value) {
+  return '<div class="paf-modal-meta-item">' +
+    '<span class="paf-modal-meta-label">' + esc(label) + '</span>' +
+    '<span class="paf-modal-meta-value">' + esc(value) + '</span>' +
+  '</div>';
+}
+
+function openModal(c) {
+  const modal = document.getElementById('paf-modal');
+  if (!modal) return;
+  const card = modal.querySelector('.paf-modal-card');
+  if (!card) return;
+
+  const r = RATINGS[c.rating] || RATINGS[0];
+  const ratingNum = c.rating || 0;
+
+  const chips = [];
+  (c.tags || []).forEach(function (t) {
+    chips.push('<span class="btn-tag">' + ICON_TAG + '<span>' + esc(t) + '</span></span>');
+  });
+  if (c.type)        chips.push('<span class="btn-tag">' + ICON_TYPE + '<span>' + esc(c.type) + '</span></span>');
+  if (c.age != null) chips.push('<span class="btn-' + c.age + '">+' + c.age + '</span>');
+
+  const meta = [];
+  if (c.length)   meta.push(metaItem('Długość', c.length));
+  if (c.episodes) meta.push(metaItem('Odcinki', c.episodes));
+  if (c.language) meta.push(metaItem('Język', c.language));
+  if (c.quality)  meta.push(metaItem('Jakość', c.quality));
+  if (c.fileType || c.fileSize) {
+    const parts = [];
+    if (c.fileType) parts.push(c.fileType);
+    if (c.fileSize) parts.push(c.fileSize + ' GB');
+    meta.push(metaItem('Plik', parts.join(' · ')));
+  }
+  if (c.drive && c.seria) meta.push(metaItem('Folder', c.drive + ':\\' + c.seria));
+
+  card.innerHTML =
+    '<button type="button" class="paf-modal-close" aria-label="Zamknij">×</button>' +
+    '<div class="paf-modal-cover"><img src="' + c.cover + '" alt="' + esc(c.alt) + '"></div>' +
+    '<div class="paf-modal-info">' +
+      '<h2 class="paf-modal-title">' + esc(c.title) + '</h2>' +
+      '<div class="paf-modal-rating"><img src="' + r.url + '" title="' + esc(r.title) + '" alt="' + ratingNum + '/5" width="100" height="31"></div>' +
+      (chips.length ? '<div class="paf-modal-chips">' + chips.join(' ') + '</div>' : '') +
+      (c.opis ? '<p class="paf-modal-opis">' + esc(c.opis) + '</p>' : '') +
+      (meta.length ? '<div class="paf-modal-meta">' + meta.join('') + '</div>' : '') +
+    '</div>';
+
+  // Hook the cover's fallback chain so a missing modal poster degrades to
+  // .png/.webp/placeholder just like the card thumbnails.
+  const modalCover = card.querySelector('.paf-modal-cover img');
+  if (modalCover && !modalCover.complete) attachCoverFallback(modalCover, null);
+
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  const modal = document.getElementById('paf-modal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleAppClick(e) {
+  // 1. "Zobacz" button copies the folder path. Handled first so we don't
+  //    also open the modal underneath it.
+  const zobaczBtn = e.target.closest('[data-zobacz]');
+  if (zobaczBtn) {
+    e.preventDefault();
+    copyZobaczPath(zobaczBtn);
+    return;
+  }
+
+  // 2. Modal close (X button) and backdrop clicks.
+  const modal = document.getElementById('paf-modal');
+  if (modal && modal.classList.contains('open')) {
+    if (e.target.closest('.paf-modal-close')) { closeModal(); return; }
+    if (!e.target.closest('.paf-modal-card'))  { closeModal(); return; }
+    return; // click inside the modal content — no-op
+  }
+
+  // 3. Anywhere on a card opens the modal with that entry's details.
+  const cardEl = e.target.closest('.p-2');
+  if (cardEl && cardEl._pafEntry) openModal(cardEl._pafEntry);
+}
+
 async function onRefreshClick(btn) {
   const orig = btn.textContent;
   btn.disabled = true;
@@ -737,6 +851,8 @@ async function onRefreshClick(btn) {
   wireSearchInput();
   wireSortControl();
   wireFiltryToggle();
+  document.addEventListener('click', handleAppClick);
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 
   try {
     const data = await loadData(false);
