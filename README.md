@@ -37,4 +37,4 @@ Pliki leżą w folderze `cover/`. Nazwa pliku = `Nazwa` z arkusza (kolumna E, be
 
 Przykład: `Asterix i Obelix: Imperium Smoka` → `cover/Asterix i Obelix - Imperium Smoka.jpeg`
 
-Strona próbuje szukać rozszerzeń w kolejności `.jpeg → .jpg → .png → .webp`, a na końcu fallbackuje na `cover/placeholder.jpg` — wystarczy wrzucić plik w którymkolwiek formacie, a dla wpisów bez własnej okładki pokaże się placeholder.
+Strona próbuje rozszerzeń w kolejności `.jpeg → .jpg → .png → .webp`, a do tego **trzech wariantów zamiany dwukropka** — czyli `Atlantyda: Zaginiony Ląd` dopasuje plik nazwany `Atlantyda - Zaginiony Ląd.*`, `Atlantyda- Zaginiony Ląd.*` lub `Atlantyda Zaginiony Ląd.*`. Na końcu fallback na `cover/placeholder.jpg`.

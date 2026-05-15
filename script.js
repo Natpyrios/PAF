@@ -677,31 +677,60 @@ async function loadData(forceFresh) {
   }
 }
 
-// renderCard emits `.jpeg` URLs; on error walk through these fallback exts,
-// then try a single placeholder image, then give up and hide.
-const COVER_FALLBACK_EXTS = ['.jpg', '.png', '.webp'];
-const COVER_PLACEHOLDER   = 'cover/placeholder.jpg';
+// rowToEntry emits cover/<name>.jpeg where <name> uses ":" → " -". On error,
+// the fallback chain walks: every extension, then alternative ":"-replacement
+// strategies ("-" and "" — naked space), then placeholder. This covers files
+// named "Atlantyda - …" / "Atlantyda- …" / "Atlantyda …" without forcing
+// the user to keep them in lockstep with the sanitize rule.
+const COVER_EXTS        = ['.jpeg', '.jpg', '.png', '.webp'];
+const COVER_PLACEHOLDER = 'cover/placeholder.jpg';
+
+function coverNameVariants(nazwa) {
+  function clean(s) {
+    return String(s || '')
+      .replace(/[\/\\<>"|?*]/g, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+  const variants = [
+    clean(nazwa.replace(/:/g, ' -')),  // "A: B" → "A - B"  (sanitizeCoverName default)
+    clean(nazwa.replace(/:/g, '-')),   // "A: B" → "A- B"
+    clean(nazwa.replace(/:/g, '')),    // "A: B" → "A B"
+  ];
+  const seen = new Set();
+  return variants.filter(function (s) {
+    if (!s || seen.has(s)) return false;
+    seen.add(s);
+    return true;
+  });
+}
+
+function buildCoverCandidates(nazwa) {
+  const urls = [];
+  coverNameVariants(nazwa).forEach(function (variant) {
+    COVER_EXTS.forEach(function (ext) {
+      urls.push('cover/' + encodeURIComponent(variant) + ext);
+    });
+  });
+  urls.push(COVER_PLACEHOLDER);
+  return urls;
+}
 
 function attachCoverFallback(img, onSettled) {
-  let attempt = 0;
-  let placeholderTried = false;
+  // candidates[0] is what rowToEntry already set as src — skip it.
+  const candidates = buildCoverCandidates(img.alt || '');
+  let idx = 1;
   function settle() { if (onSettled) onSettled(); }
 
   img.addEventListener('load', settle, { once: true });
   img.addEventListener('error', function onError() {
-    if (attempt < COVER_FALLBACK_EXTS.length) {
+    if (idx < candidates.length) {
       img.addEventListener('error', onError, { once: true });
-      img.src = img.src.replace(/\.(jpeg|jpg|png|webp)(\?.*)?$/, COVER_FALLBACK_EXTS[attempt++] + '$2');
-      return;
+      img.src = candidates[idx++];
+    } else {
+      img.style.display = 'none';
+      settle();
     }
-    if (!placeholderTried) {
-      placeholderTried = true;
-      img.addEventListener('error', onError, { once: true });
-      img.src = COVER_PLACEHOLDER;
-      return;
-    }
-    img.style.display = 'none';
-    settle();
   }, { once: true });
 }
 
