@@ -19,13 +19,22 @@ const UNAGE = '__no_age__';
 // the CSV export redirects through googleusercontent which can refuse the
 // cross-origin fetch from the browser.
 const SHEETS_GVIZ_URL = 'https://docs.google.com/spreadsheets/d/1CuHfluEd-9hVun6ANAeK41lNx949Aa_j0YVzWbgGIY8/gviz/tq?tqx=out:json';
-const CACHE_KEY    = 'paf_live_db_v5';
+const CACHE_KEY    = 'paf_live_db_v7';
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 const SHEET_COL = {
-  NAZWA: 4, ROK: 5, ODC: 6, LANGUAGE: 7,
+  DYSK: 1, SERIA: 3, NAZWA: 4, ROK: 5, ODC: 6, LANGUAGE: 7,
   DLUGOSC: 9, JAKOSC: 10, FILETYPE: 11, GB: 12,
   OCENA: 14, WIEK: 15, TAGI: 16, RODZAJ: 17,
+};
+
+// Maps the sheet's "Dysk" column to the actual drive letter where that
+// category's content lives on the owner's machine. Used to build the
+// `search-ms:` URL behind the "Zobacz" button. Add entries here if new disk
+// categories appear in the sheet.
+const DRIVE_MAP = {
+  'bajki i anime':   'P',
+  'filmy i seriale': 'Q',
 };
 
 // Cover-filename character replacements. Must be byte-equivalent to whatever
@@ -69,6 +78,21 @@ function renderStars(n) {
 // Heroicons (solid). Read better at 10–12 px than the outline variants.
 const ICON_TAG  = '<svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path fill-rule="evenodd" clip-rule="evenodd" d="M5.25 2.25a3 3 0 0 0-3 3v4.318a3 3 0 0 0 .879 2.121l9.58 9.581c.92.92 2.39 1.186 3.548.428a18.849 18.849 0 0 0 5.441-5.44c.758-1.16.492-2.629-.428-3.548l-9.58-9.581a3 3 0 0 0-2.122-.879H5.25ZM6.375 7.5a1.125 1.125 0 1 0 0-2.25 1.125 1.125 0 0 0 0 2.25Z"/></svg>';
 const ICON_TYPE = '<svg class="w-3 h-3 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M3 4.875C3 3.839 3.84 3 4.875 3h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 0 1 3 9.375v-4.5ZM13.5 4.875c0-1.036.84-1.875 1.875-1.875h4.5C20.91 3 21.75 3.84 21.75 4.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5a1.875 1.875 0 0 1-1.875-1.875v-4.5ZM3 15.375c0-1.036.84-1.875 1.875-1.875h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5A1.875 1.875 0 0 1 3 19.875v-4.5ZM13.5 15.375c0-1.036.84-1.875 1.875-1.875h4.5c1.036 0 1.875.84 1.875 1.875v4.5c0 1.036-.84 1.875-1.875 1.875h-4.5a1.875 1.875 0 0 1-1.875-1.875v-4.5Z"/></svg>';
+
+// "Zobacz" button target — uses Windows' `search-ms:` protocol because
+// `file:///` URLs are blocked from http origins. Browser asks for permission
+// once, then routes the click straight to Explorer with results scoped to
+// the chosen folder.
+function zobaczHref(c) {
+  if (c.drive && c.seria) return 'search-ms:crumb=location:' + encodeURIComponent(c.drive + ':\\' + c.seria);
+  if (c.drive)            return 'search-ms:crumb=location:' + encodeURIComponent(c.drive + ':\\');
+  return 'search-ms:query=' + encodeURIComponent(c.alt);
+}
+function zobaczTitle(c) {
+  if (c.drive && c.seria) return 'Otwórz w Eksploratorze: ' + c.drive + ':\\' + c.seria;
+  if (c.drive)            return 'Otwórz w Eksploratorze: ' + c.drive + ':\\';
+  return 'Szukaj w Eksploratorze: ' + c.alt;
+}
 
 function renderCard(c, query) {
   const r = RATINGS[c.rating] || RATINGS[0];
@@ -145,7 +169,7 @@ function renderCard(c, query) {
             '<h5 class="card-year">' + yearBlock + '</h5>' +
           '</div>' +
           '<img src="' + r.url + '" title="' + esc(r.title) + '" alt="' + ratingNum + '/5" width="100" height="31" class="block">' +
-          '<button type="button" class="btn-primary px-4 py-1 rounded-md text-white text-sm font-medium">Zobacz</button>' +
+          '<a href="' + zobaczHref(c) + '" title="' + esc(zobaczTitle(c)) + '" class="btn-primary inline-block no-underline px-4 py-1 rounded-md text-white text-sm font-medium">Zobacz</a>' +
         '</div>' +
       '</div>' +
     '</div>';
@@ -539,6 +563,10 @@ function rowToEntry(row) {
   const nazwa = cell(SHEET_COL.NAZWA);
   if (!nazwa) return null;
 
+  const dysk     = cell(SHEET_COL.DYSK);
+  // Folder names on disk can't contain ":" — strip it so the search-ms URL
+  // points at the actual folder ("Avatar: Legenda…" → "Avatar Legenda…").
+  const seria    = cell(SHEET_COL.SERIA).replace(/:/g, '');
   const rok      = cell(SHEET_COL.ROK);
   const odc      = cell(SHEET_COL.ODC);
   const jezyk    = cell(SHEET_COL.LANGUAGE);
@@ -572,6 +600,13 @@ function rowToEntry(row) {
   if (jakosc)   entry.quality  = jakosc;
   if (filetype) entry.fileType = filetype;
   if (gb)       entry.fileSize = gb;
+
+  // "Zobacz" target — drive comes from the Dysk column via DRIVE_MAP, folder
+  // name from the Seria column. Both kept on the entry so renderCard can
+  // build the search-ms URL without re-mapping.
+  const drive = DRIVE_MAP[dysk.toLowerCase()];
+  if (drive) entry.drive = drive;
+  if (seria) entry.seria = seria;
 
   // Pre-computed sort keys — parsed once here so sortFiltered() can do plain
   // numeric compares instead of regex/split per swap.
@@ -641,12 +676,14 @@ async function loadData(forceFresh) {
   }
 }
 
-// renderCard emits `.jpeg` URLs; on error walk through these fallback exts
-// before giving up and hiding the image.
+// renderCard emits `.jpeg` URLs; on error walk through these fallback exts,
+// then try a single placeholder image, then give up and hide.
 const COVER_FALLBACK_EXTS = ['.jpg', '.png', '.webp'];
+const COVER_PLACEHOLDER   = 'cover/placeholder.jpg';
 
 function attachCoverFallback(img, onSettled) {
   let attempt = 0;
+  let placeholderTried = false;
   function settle() { if (onSettled) onSettled(); }
 
   img.addEventListener('load', settle, { once: true });
@@ -654,10 +691,16 @@ function attachCoverFallback(img, onSettled) {
     if (attempt < COVER_FALLBACK_EXTS.length) {
       img.addEventListener('error', onError, { once: true });
       img.src = img.src.replace(/\.(jpeg|jpg|png|webp)(\?.*)?$/, COVER_FALLBACK_EXTS[attempt++] + '$2');
-    } else {
-      img.style.display = 'none';
-      settle();
+      return;
     }
+    if (!placeholderTried) {
+      placeholderTried = true;
+      img.addEventListener('error', onError, { once: true });
+      img.src = COVER_PLACEHOLDER;
+      return;
+    }
+    img.style.display = 'none';
+    settle();
   }, { once: true });
 }
 

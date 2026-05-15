@@ -8,6 +8,8 @@ Wszystko siedzi w [arkuszu Google](https://docs.google.com/spreadsheets/d/1CuHfl
 
 | kolumna       | co tam wpisać |
 |---------------|---------------|
+| **B — Dysk**   | `Bajki i Anime` lub `Filmy i Seriale` — mapuje się na literę dysku (`P` / `Q`) dla przycisku "Zobacz" |
+| **D — Seria**  | nazwa folderu na dysku (przycisk "Zobacz" otwiera go w Eksploratorze) |
 | **E — Nazwa**  | tytuł bez roku (to też nazwa pliku okładki) |
 | **F — Rok**    | `2024` lub zakres `2003-2004` |
 | **G — Odc**    | liczba odcinków |
@@ -34,4 +36,4 @@ Pliki leżą w folderze `cover/`. Nazwa pliku = `Nazwa` z arkusza (kolumna E, be
 
 Przykład: `Asterix i Obelix: Imperium Smoka` → `cover/Asterix i Obelix - Imperium Smoka.jpeg`
 
-Strona próbuje szukać rozszerzeń w kolejności `.jpeg → .jpg → .png → .webp` — wystarczy wrzucić plik w którymkolwiek formacie. Brak wszystkich = okładka się nie pokaże.
+Strona próbuje szukać rozszerzeń w kolejności `.jpeg → .jpg → .png → .webp`, a na końcu fallbackuje na `cover/placeholder.jpg` — wystarczy wrzucić plik w którymkolwiek formacie, a dla wpisów bez własnej okładki pokaże się placeholder.
