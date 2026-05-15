@@ -37,11 +37,11 @@ Pliki leżą w folderze `cover/`. Nazwa pliku = `Nazwa` z arkusza (kolumna E, be
 
 Przykład: `Asterix i Obelix: Imperium Smoka` → `cover/Asterix i Obelix - Imperium Smoka.jpeg`
 
-Strona próbuje rozszerzeń w kolejności `.jpeg → .jpg → .png → .webp`, krzyżując je z różnymi formami nazwy — trzy warianty zamiany `:` (` -` / `-` / nic), z/bez polskich znaków (`ą`→`a`, `ł`→`l` itd.), ze/bez spacji, oryginalna wielkość / lowercase. Czyli `Atlantyda: Zaginiony Ląd` dopasuje plik o dowolnej z poniższych nazw:
+Strona próbuje rozszerzeń w kolejności `.jpeg → .jpg → .png → .webp`, krzyżując je z różnymi formami nazwy — trzy warianty zamiany `:` (` -` / `-` / nic), z/bez polskich znaków (`ą`→`a`, `ł`→`l` itd.), oryginalna wielkość / lowercase. Czyli `Atlantyda: Zaginiony Ląd` dopasuje plik o dowolnej z poniższych nazw:
 
 - `Atlantyda - Zaginiony Ląd.*` / `Atlantyda- Zaginiony Ląd.*` / `Atlantyda Zaginiony Ląd.*`
-- `AtlantydaZaginionyLąd.*` / `AtlantydaZaginionyLad.*`
-- `atlantyda zaginiony lad.*` / `atlantydazaginionylad.*`
+- `Atlantyda - Zaginiony Lad.*` / `Atlantyda Zaginiony Lad.*`
+- `atlantyda zaginiony lad.*` / `atlantyda - zaginiony lad.*`
 - … i kombinacje powyższych
 
 ### Dwie pozycje z tą samą nazwą

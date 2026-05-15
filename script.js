@@ -162,10 +162,10 @@ function renderCard(c, query) {
     : '';
 
   return '' +
-    '<div class="p-2 flex">' +
-      '<div class="card-modern w-[calc(50vw-20px)] max-w-[200px] sm:w-[calc(33vw-20px)] sm:max-w-[220px] md:w-64 md:max-w-none h-full flex flex-col">' +
+    '<div class="p-2 flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6">' +
+      '<div class="card-modern w-full h-full flex flex-col">' +
         '<div class="relative">' +
-          '<img src="' + c.cover + '" alt="' + esc(c.alt) + '" data-year="' + (c._sortYear || '') + '" width="256" height="396" class="block w-full aspect-[256/396] object-fill" />' +
+          '<img src="' + c.cover + '" alt="' + esc(c.alt) + '" data-year="' + (c._colliding && c._sortYear ? c._sortYear : '') + '" width="256" height="396" class="block w-full aspect-[256/396] object-fill" />' +
           hoverOverlay + tlBadge + trBadge + brBadge +
         '</div>' +
         '<div class="px-3 py-2 flex flex-col items-center gap-1.5 flex-1">' +
@@ -336,10 +336,21 @@ function startProgressiveRender(data, container, query) {
       function check() { if (delayDone && imgDone && !stopped) c.classList.add('card-shown'); }
       setTimeout(function () { delayDone = true; check(); }, delay);
 
-      if (!cover || cover.complete) {
+      if (!cover) {
+        imgDone = true;
+        check();
+      } else if (cover.complete && cover.naturalWidth > 0) {
+        // Cached success — record the URL so a future load skips fetching.
+        const url = relativeCoverUrl(cover.src);
+        if (url && url !== COVER_PLACEHOLDER) {
+          setCoverInIndex(cover.alt || '', cover.dataset.year || '', url);
+        }
         imgDone = true;
         check();
       } else {
+        // Still loading OR already-failed (cached 404 — error event already
+        // fired before we could attach a listener). attachCoverFallback
+        // handles both: it walks the chain manually in the failed case.
         attachCoverFallback(cover, function () { imgDone = true; check(); });
       }
     });
@@ -474,8 +485,15 @@ function buildFilterSidebar(data) {
       return '<button type="button" class="filter-btn" data-section="' + section +
              '" data-value="' + esc(String(v)) + '">' + labelFn(v) + '</button>';
     }).join('');
-    return '<div class="filtry-naglowek">' + esc(title) + '</div>' + buttons +
-           '<button type="button" class="filter-btn-all" data-section="' + section + '">Zaznacz wszystkie</button>';
+    // Wraps each filter category in a section so the mobile layout can
+    // collapse it accordion-style; on desktop the wrapper is purely structural
+    // and the content is always visible.
+    return '<div class="filtry-section">' +
+             '<button type="button" class="filtry-naglowek">' + esc(title) + '</button>' +
+             '<div class="filtry-section-content">' + buttons +
+               '<button type="button" class="filter-btn-all" data-section="' + section + '">Zaznacz wszystkie</button>' +
+             '</div>' +
+           '</div>';
   }
 
   const sidebar = document.getElementById('filtry');
@@ -547,15 +565,6 @@ function wireSortControl() {
   });
 }
 
-function wireFiltryToggle() {
-  const btn = document.getElementById('filtryToggle');
-  const filtry = document.getElementById('filtry');
-  if (!btn || !filtry) return;
-  btn.addEventListener('click', function () {
-    filtry.classList.toggle('is-open');
-  });
-}
-
 function rowToEntry(row) {
   function cell(i) {
     const c = row && row.c && row.c[i];
@@ -595,8 +604,11 @@ function rowToEntry(row) {
   const yearNum   = yearMatch ? parseInt(yearMatch[1], 10) : null;
 
   const title  = rok ? (nazwa + ' (' + rok + ')') : nazwa;
-  const coverName = sanitizeCoverName(nazwa) + (yearNum ? ' ' + yearNum : '');
-  const cover  = 'cover/' + encodeURIComponent(coverName) + '.jpeg';
+  // Default to the year-less cover URL. applyCollisionCovers() upgrades this
+  // to "<Nazwa> <Year>.jpeg" later, but ONLY for entries that share a Nazwa
+  // with another row — otherwise a year-specific initial src wastes ~16 404s
+  // walking through year-suffixed variants before reaching the actual file.
+  const cover  = 'cover/' + encodeURIComponent(sanitizeCoverName(nazwa)) + '.jpeg';
   const tags   = tagi ? tagi.split(',').map(function (t) { return t.trim(); }).filter(Boolean) : [];
   const rating = parseInt(ocena, 10) || 0;
   const ageM   = wiek.match(/(\d+)/);
@@ -649,6 +661,79 @@ function parseGvizResponse(text) {
   return json.table.rows.map(rowToEntry).filter(Boolean);
 }
 
+// Cover index — remembers `alt → working URL` across sessions, so a card whose
+// poster is named e.g. `Avatar.jpg` instead of the canonical `Avatar.jpeg`
+// doesn't have to walk the fallback chain on every visit. Populated by
+// attachCoverFallback whenever an image actually loads; consulted by
+// applyCollisionCovers when picking the initial img.src.
+const COVER_INDEX_KEY = 'paf_cover_index_v1';
+let _coverIndex = (function () {
+  try {
+    const raw = localStorage.getItem(COVER_INDEX_KEY);
+    if (!raw) return {};
+    const obj = JSON.parse(raw);
+    return (obj && typeof obj === 'object') ? obj : {};
+  } catch (e) { return {}; }
+})();
+let _coverIndexFlushTimer = null;
+
+function coverIndexKey(alt, year) {
+  // Colliding entries (two rows sharing a Nazwa) are keyed by alt+year so the
+  // two posters resolve independently; everyone else keys on alt alone.
+  return year ? alt + '|' + year : alt;
+}
+function getCoverFromIndex(alt, year) {
+  return _coverIndex[coverIndexKey(alt, year)] || null;
+}
+function setCoverInIndex(alt, year, url) {
+  const key = coverIndexKey(alt, year);
+  if (_coverIndex[key] === url) return;
+  _coverIndex[key] = url;
+  // Debounced write — first-paint can fire dozens of load events near
+  // simultaneously and we'd otherwise serialize the whole map per card.
+  if (_coverIndexFlushTimer) clearTimeout(_coverIndexFlushTimer);
+  _coverIndexFlushTimer = setTimeout(function () {
+    _coverIndexFlushTimer = null;
+    try { localStorage.setItem(COVER_INDEX_KEY, JSON.stringify(_coverIndex)); }
+    catch (e) { console.warn('cover index write failed:', e); }
+  }, 500);
+}
+// img.src is absolute (http://host/cover/...); we store the relative form
+// so the index travels across hosts. Returns null if the URL isn't a
+// cover URL (e.g. someone set it to the placeholder).
+function relativeCoverUrl(absoluteSrc) {
+  const m = String(absoluteSrc || '').match(/cover\/[^?#]+/);
+  return m ? m[0] : null;
+}
+
+// Only entries that share a Nazwa with another row get the year-suffixed
+// cover URL (and year-specific candidates in the fallback chain). Unique
+// titles stay on the year-less form so the typical card resolves in one HTTP
+// request instead of walking through ~16 year-suffixed 404s before reaching
+// the actual file. The cover index takes precedence over both defaults when
+// a previous load recorded a working URL.
+function applyCollisionCovers(entries) {
+  const counts = new Map();
+  entries.forEach(function (e) {
+    counts.set(e.alt, (counts.get(e.alt) || 0) + 1);
+  });
+  entries.forEach(function (e) {
+    const baseName = sanitizeCoverName(e.alt);
+    const colliding = counts.get(e.alt) > 1 && e._sortYear;
+    if (colliding) e._colliding = true; else delete e._colliding;
+
+    const yearKey = colliding ? String(e._sortYear) : '';
+    const cached = getCoverFromIndex(e.alt, yearKey);
+    if (cached) {
+      e.cover = cached;
+    } else if (colliding) {
+      e.cover = 'cover/' + encodeURIComponent(baseName + ' ' + e._sortYear) + '.jpeg';
+    } else {
+      e.cover = 'cover/' + encodeURIComponent(baseName) + '.jpeg';
+    }
+  });
+}
+
 function readCache() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
@@ -671,13 +756,17 @@ function writeCache(data) {
 async function loadData(forceFresh) {
   if (!forceFresh) {
     const cached = readCache();
-    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) return cached.data;
+    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+      applyCollisionCovers(cached.data);
+      return cached.data;
+    }
   }
   try {
     const r = await fetch(SHEETS_GVIZ_URL);
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const text = await r.text();
     const entries = parseGvizResponse(text);
+    applyCollisionCovers(entries);
     writeCache(entries);
     return entries;
   } catch (err) {
@@ -685,6 +774,7 @@ async function loadData(forceFresh) {
     const stale = readCache();
     if (stale) {
       console.warn('Live fetch failed, using stale cache:', err);
+      applyCollisionCovers(stale.data);
       return stale.data;
     }
     throw err;
@@ -717,24 +807,21 @@ function coverNameVariants(nazwa) {
       .replace(/Ł/g, 'L');
   }
 
-  // For each of the three ":"-replacement strategies, emit 8 forms:
-  // {original, diacritics-stripped} × {spaced, unspaced} × {as-is, lower-case}.
-  // Set-based dedupe collapses duplicates (e.g. unspaced forms across colon
-  // strategies often coincide).
+  // For each of the three ":"-replacement strategies, emit 4 forms:
+  // {original, diacritics-stripped} × {as-is, lower-case}. No-space forms
+  // were dropped — they doubled the candidate count for every multi-word
+  // title with no real-world hit rate, so they were the worst offender in
+  // the fallback-chain 404 cascade.
   const bases = [' -', '-', ''].map(function (rep) {
     return clean(nazwa.replace(/:/g, rep));
   });
 
   const forms = [];
   bases.forEach(function (base) {
-    const stripped       = stripDiacritics(base);
-    const baseNoSpace    = base.replace(/\s+/g, '');
-    const strippedNoSp   = stripped.replace(/\s+/g, '');
+    const stripped = stripDiacritics(base);
     forms.push(
-      base,            stripped,
-      baseNoSpace,     strippedNoSp,
-      base.toLowerCase(),        stripped.toLowerCase(),
-      baseNoSpace.toLowerCase(), strippedNoSp.toLowerCase()
+      base,               stripped,
+      base.toLowerCase(), stripped.toLowerCase()
     );
   });
 
@@ -769,13 +856,28 @@ function buildCoverCandidates(nazwa, year) {
 }
 
 function attachCoverFallback(img, onSettled) {
-  // candidates[0] is what rowToEntry already set as src — skip it.
   const candidates = buildCoverCandidates(img.alt || '', img.dataset.year || '');
-  let idx = 1;
+  // Walk from just past whichever candidate matches the failed initial src.
+  // Usually that's candidates[0] (the canonical form), but when the initial
+  // src came from the cover index it could be deeper in the list — skipping
+  // by index alone would retry the URL we already know 404s.
+  const failedRelative = relativeCoverUrl(img.src);
+  let idx = candidates.findIndex(function (u) { return u === failedRelative; });
+  idx = (idx === -1) ? 0 : idx + 1;
+
   function settle() { if (onSettled) onSettled(); }
 
-  img.addEventListener('load', settle, { once: true });
-  img.addEventListener('error', function onError() {
+  function onLoad() {
+    // Record the URL that finally worked so next visit's initial src is the
+    // already-known-good one. Placeholder excluded — we don't want to lock
+    // the index onto "give up" when a poster might appear later.
+    const url = relativeCoverUrl(img.src);
+    if (url && url !== COVER_PLACEHOLDER) {
+      setCoverInIndex(img.alt || '', img.dataset.year || '', url);
+    }
+    settle();
+  }
+  function onError() {
     if (idx < candidates.length) {
       img.addEventListener('error', onError, { once: true });
       img.src = candidates[idx++];
@@ -783,7 +885,19 @@ function attachCoverFallback(img, onSettled) {
       img.style.display = 'none';
       settle();
     }
-  }, { once: true });
+  }
+
+  img.addEventListener('load', onLoad, { once: true });
+  img.addEventListener('error', onError, { once: true });
+
+  // Cached-404 entry: complete is already true and the error event fired
+  // before we could attach a listener. The DOM won't refire it. Kick off the
+  // walk manually so the card doesn't sit there with a broken-image icon
+  // waiting for an event that will never come.
+  if (img.complete && img.naturalWidth === 0) {
+    img.removeEventListener('error', onError);
+    onError();
+  }
 }
 
 function reloadAll(data) {
@@ -857,7 +971,7 @@ function openModal(c) {
 
   card.innerHTML =
     '<button type="button" class="paf-modal-close" aria-label="Zamknij">×</button>' +
-    '<div class="paf-modal-cover"><img src="' + c.cover + '" alt="' + esc(c.alt) + '" data-year="' + (c._sortYear || '') + '"></div>' +
+    '<div class="paf-modal-cover"><img src="' + c.cover + '" alt="' + esc(c.alt) + '" data-year="' + (c._colliding && c._sortYear ? c._sortYear : '') + '"></div>' +
     '<div class="paf-modal-info">' +
       '<h2 class="paf-modal-title">' + titleHtml(c.title, '') + '</h2>' +
       '<div class="paf-modal-rating"><img src="' + r.url + '" title="' + esc(r.title) + '" alt="' + ratingNum + '/5" width="100" height="31"></div>' +
@@ -900,7 +1014,17 @@ function handleAppClick(e) {
     return; // click inside the modal content — no-op
   }
 
-  // 3. Anywhere on a card opens the modal with that entry's details.
+  // 3. Mobile accordion: toggle a filter section's `.is-expanded` when its
+  //    header is clicked. Desktop CSS hides the chevron and forces content
+  //    visible, so this toggle becomes inert there.
+  const sectionHeader = e.target.closest('.filtry-naglowek');
+  if (sectionHeader) {
+    const section = sectionHeader.closest('.filtry-section');
+    if (section) section.classList.toggle('is-expanded');
+    return;
+  }
+
+  // 4. Anywhere on a card opens the modal with that entry's details.
   const cardEl = e.target.closest('.p-2');
   if (cardEl && cardEl._pafEntry) openModal(cardEl._pafEntry);
 }
@@ -931,7 +1055,6 @@ async function onRefreshClick(btn) {
   // when allData is null so a stray keystroke before the first load is fine.
   wireSearchInput();
   wireSortControl();
-  wireFiltryToggle();
   document.addEventListener('click', handleAppClick);
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
 

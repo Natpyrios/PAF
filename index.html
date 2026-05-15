@@ -2,8 +2,9 @@
 <html>
 <head>
     <meta charset="utf-8" name="theme-color" content="#06080f"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="icon" href="https://i.imgur.com/uPiIzGJ.png">
-    <script src="lazyload.js?v=20260523"></script>
+    <script src="lazyload.js?v=20260528"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -21,7 +22,7 @@
         }
       }
     </script>
-    <link rel="stylesheet" href="css/styles.css?v=20260523">
+    <link rel="stylesheet" href="css/styles.css?v=20260528">
     <title>PAF</title>
 </head>
 
@@ -47,7 +48,7 @@
     </select>
 </div>
 
-<div class="fixed top-[62px] left-0 z-[997] w-full h-[45px] bg-black/85 backdrop-blur-md border-b border-white/5 flex items-center gap-2 px-3 md:gap-0 md:px-0 md:justify-center">
+<div class="fixed top-[62px] left-0 z-[997] w-full h-[45px] bg-black/85 backdrop-blur-md border-b border-white/5 flex items-center justify-center px-3 md:px-0">
     <div class="relative flex-1 max-w-[440px] md:flex-none md:max-w-none">
         <form action="" onsubmit="return false">
             <input id="myInput" type="text" autocomplete="off"
@@ -66,15 +67,11 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
         </svg>
     </div>
-    <button id="filtryToggle" type="button" title="Filtry i odświeżenie danych"
-            class="md:hidden btn-primary px-3 py-1 rounded-lg text-white text-xs font-semibold shrink-0">
-        Filtry
-    </button>
 </div>
 
-<div id="filtry" class="fixed inset-x-0 md:inset-x-auto md:left-0 top-[107px] md:top-[115px] bottom-0 md:bottom-2 w-auto md:w-[150px] z-[998] md:z-[996] p-4 md:py-3 md:px-2 flex flex-col gap-1 overflow-y-auto bg-paf-bg/95 backdrop-blur-md md:bg-transparent md:backdrop-blur-none"></div>
+<div id="filtry" class="md:fixed md:left-0 md:top-[115px] md:bottom-2 mt-[115px] md:mt-0 w-full md:w-[150px] md:z-[996] px-3 pb-2 md:py-3 md:px-2 flex flex-col gap-1 md:overflow-y-auto"></div>
 
-<div id="container" class="flex flex-row flex-wrap pt-[120px] md:pt-[110px] pl-2 md:pl-[170px] justify-center md:justify-start"></div>
+<div id="container" class="flex flex-row flex-wrap pt-2 md:pt-[110px] pl-2 md:pl-[170px] justify-center md:justify-start"></div>
 
 <div class="w-full h-[300px] bg-gradient-to-b from-[#0a0e1a] to-paf-bg border-t border-teal-500/15 text-slate-400 flex">
     <div class="w-1/2 flex items-center justify-center">
@@ -101,6 +98,6 @@
     <div class="paf-modal-card"></div>
 </div>
 
-<script src="script.js?v=20260523"></script>
+<script src="script.js?v=20260528"></script>
 </body>
 </html>
