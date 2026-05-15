@@ -147,6 +147,10 @@ body {
   font-weight: 500;
   letter-spacing: -0.01em;
 }
+.title-year {
+  opacity: 0.5;
+  font-weight: 400;
+}
 .card-year {
   inline-size: 100%;
   max-inline-size: 200px;

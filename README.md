@@ -37,4 +37,18 @@ Pliki leżą w folderze `cover/`. Nazwa pliku = `Nazwa` z arkusza (kolumna E, be
 
 Przykład: `Asterix i Obelix: Imperium Smoka` → `cover/Asterix i Obelix - Imperium Smoka.jpeg`
 
-Strona próbuje rozszerzeń w kolejności `.jpeg → .jpg → .png → .webp`, a do tego **trzech wariantów zamiany dwukropka** — czyli `Atlantyda: Zaginiony Ląd` dopasuje plik nazwany `Atlantyda - Zaginiony Ląd.*`, `Atlantyda- Zaginiony Ląd.*` lub `Atlantyda Zaginiony Ląd.*`. Na końcu fallback na `cover/placeholder.jpg`.
+Strona próbuje rozszerzeń w kolejności `.jpeg → .jpg → .png → .webp`, krzyżując je z różnymi formami nazwy — trzy warianty zamiany `:` (` -` / `-` / nic), z/bez polskich znaków (`ą`→`a`, `ł`→`l` itd.), ze/bez spacji, oryginalna wielkość / lowercase. Czyli `Atlantyda: Zaginiony Ląd` dopasuje plik o dowolnej z poniższych nazw:
+
+- `Atlantyda - Zaginiony Ląd.*` / `Atlantyda- Zaginiony Ląd.*` / `Atlantyda Zaginiony Ląd.*`
+- `AtlantydaZaginionyLąd.*` / `AtlantydaZaginionyLad.*`
+- `atlantyda zaginiony lad.*` / `atlantydazaginionylad.*`
+- … i kombinacje powyższych
+
+### Dwie pozycje z tą samą nazwą
+
+Jeśli masz np. dwa filmy `Gladiator` (z 2001 i 2024), strona najpierw szuka pliku z **rokiem w nazwie** (`Gladiator 2001.jpg`, `gladiator 2001.jpg` itd. — wszystkie warianty jak wyżej), a dopiero potem spada na wspólny `Gladiator.jpg`. Czyli:
+
+- Sam `Gladiator.jpg` → użyty dla **obydwóch** pozycji
+- Dodaj `Gladiator 2001.jpg` i/lub `Gladiator 2024.jpg` → każda pozycja dostaje swój osobny plakat, a brakujący wariant nadal fallbackuje na wspólny `Gladiator.jpg`
+
+Na samym końcu fallback na `cover/placeholder.jpg`.
