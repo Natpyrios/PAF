@@ -165,7 +165,7 @@ function renderCard(c, query) {
     '<div class="p-2 flex w-1/2 sm:w-1/3 md:w-1/4 lg:w-1/5 xl:w-1/6">' +
       '<div class="card-modern w-full h-full flex flex-col">' +
         '<div class="relative">' +
-          '<img src="' + c.cover + '" alt="' + esc(c.alt) + '" data-year="' + (c._colliding && c._sortYear ? c._sortYear : '') + '" width="256" height="396" class="block w-full aspect-[256/396] object-fill" />' +
+          '<img src="' + c.cover + '" alt="' + esc(c.alt) + '" width="256" height="396" class="block w-full aspect-[256/396] object-fill" />' +
           hoverOverlay + tlBadge + trBadge + brBadge +
         '</div>' +
         '<div class="px-3 py-2 flex flex-col items-center gap-1.5 flex-1">' +
@@ -325,34 +325,17 @@ function startProgressiveRender(data, container, query) {
     });
     void container.offsetHeight;
 
-    // Reveal each card only when its cover image is decoded AND its stagger
-    // delay has elapsed — otherwise we'd fade in an empty card and the image
-    // would pop in afterwards. The cover-load step itself goes through
-    // attachCoverFallback which retries .jpeg → .png before giving up.
+    // Fade each card in once its stagger elapses — no waiting for the cover.
+    // Every card boots up showing cover/placeholder.jpg; backgroundProbeCover
+    // walks candidate URLs in the background and swaps the real poster in if
+    // (and only when) it finds one.
     cards.forEach(function (c, i) {
       const cover = c.querySelector('img');
       const delay = i * STAGGER_MS;
-      let delayDone = false, imgDone = false;
-      function check() { if (delayDone && imgDone && !stopped) c.classList.add('card-shown'); }
-      setTimeout(function () { delayDone = true; check(); }, delay);
-
-      if (!cover) {
-        imgDone = true;
-        check();
-      } else if (cover.complete && cover.naturalWidth > 0) {
-        // Cached success — record the URL so a future load skips fetching.
-        const url = relativeCoverUrl(cover.src);
-        if (url && url !== COVER_PLACEHOLDER) {
-          setCoverInIndex(cover.alt || '', cover.dataset.year || '', url);
-        }
-        imgDone = true;
-        check();
-      } else {
-        // Still loading OR already-failed (cached 404 — error event already
-        // fired before we could attach a listener). attachCoverFallback
-        // handles both: it walks the chain manually in the failed case.
-        attachCoverFallback(cover, function () { imgDone = true; check(); });
-      }
+      setTimeout(function () {
+        if (!stopped) c.classList.add('card-shown');
+      }, delay);
+      if (cover) backgroundProbeCover(cover, slice[i]);
     });
     return true;
   }
@@ -706,31 +689,18 @@ function relativeCoverUrl(absoluteSrc) {
   return m ? m[0] : null;
 }
 
-// Only entries that share a Nazwa with another row get the year-suffixed
-// cover URL (and year-specific candidates in the fallback chain). Unique
-// titles stay on the year-less form so the typical card resolves in one HTTP
-// request instead of walking through ~16 year-suffixed 404s before reaching
-// the actual file. The cover index takes precedence over both defaults when
-// a previous load recorded a working URL.
+// Every card boots up showing the placeholder; backgroundProbeCover swaps in
+// the real poster (if any) once it lands. Only side effect here is flagging
+// duplicates so backgroundProbeCover knows to try year-suffixed candidates.
 function applyCollisionCovers(entries) {
   const counts = new Map();
   entries.forEach(function (e) {
     counts.set(e.alt, (counts.get(e.alt) || 0) + 1);
   });
   entries.forEach(function (e) {
-    const baseName = sanitizeCoverName(e.alt);
     const colliding = counts.get(e.alt) > 1 && e._sortYear;
     if (colliding) e._colliding = true; else delete e._colliding;
-
-    const yearKey = colliding ? String(e._sortYear) : '';
-    const cached = getCoverFromIndex(e.alt, yearKey);
-    if (cached) {
-      e.cover = cached;
-    } else if (colliding) {
-      e.cover = 'cover/' + encodeURIComponent(baseName + ' ' + e._sortYear) + '.jpeg';
-    } else {
-      e.cover = 'cover/' + encodeURIComponent(baseName) + '.jpeg';
-    }
+    e.cover = COVER_PLACEHOLDER;
   });
 }
 
@@ -855,49 +825,39 @@ function buildCoverCandidates(nazwa, year) {
   return urls;
 }
 
-function attachCoverFallback(img, onSettled) {
-  const candidates = buildCoverCandidates(img.alt || '', img.dataset.year || '');
-  // Walk from just past whichever candidate matches the failed initial src.
-  // Usually that's candidates[0] (the canonical form), but when the initial
-  // src came from the cover index it could be deeper in the list — skipping
-  // by index alone would retry the URL we already know 404s.
-  const failedRelative = relativeCoverUrl(img.src);
-  let idx = candidates.findIndex(function (u) { return u === failedRelative; });
-  idx = (idx === -1) ? 0 : idx + 1;
-
-  function settle() { if (onSettled) onSettled(); }
-
-  function onLoad() {
-    // Record the URL that finally worked so next visit's initial src is the
-    // already-known-good one. Placeholder excluded — we don't want to lock
-    // the index onto "give up" when a poster might appear later.
-    const url = relativeCoverUrl(img.src);
-    if (url && url !== COVER_PLACEHOLDER) {
-      setCoverInIndex(img.alt || '', img.dataset.year || '', url);
-    }
-    settle();
-  }
-  function onError() {
-    if (idx < candidates.length) {
-      img.addEventListener('error', onError, { once: true });
-      img.src = candidates[idx++];
-    } else {
-      img.style.display = 'none';
-      settle();
-    }
+// Probe candidate URLs with hidden Image() requests, swapping the displayed
+// img (and entry.cover, and the cover index) on the first hit. Runs entirely
+// in the background — the card has already been faded in showing the
+// placeholder, so a slow chain walk doesn't hold up the UI. If every candidate
+// 404s the placeholder stays.
+function backgroundProbeCover(displayedImg, entry) {
+  const year = (entry._colliding && entry._sortYear) ? String(entry._sortYear) : '';
+  const cachedUrl = getCoverFromIndex(entry.alt || '', year);
+  let candidates = buildCoverCandidates(entry.alt || '', year)
+    .filter(function (u) { return u !== COVER_PLACEHOLDER; });
+  // Cached hit goes first so a returning visitor's swap is one request
+  // (usually an HTTP-cache hit on top of that).
+  if (cachedUrl) {
+    candidates = [cachedUrl].concat(candidates.filter(function (u) { return u !== cachedUrl; }));
   }
 
-  img.addEventListener('load', onLoad, { once: true });
-  img.addEventListener('error', onError, { once: true });
-
-  // Cached-404 entry: complete is already true and the error event fired
-  // before we could attach a listener. The DOM won't refire it. Kick off the
-  // walk manually so the card doesn't sit there with a broken-image icon
-  // waiting for an event that will never come.
-  if (img.complete && img.naturalWidth === 0) {
-    img.removeEventListener('error', onError);
-    onError();
+  let idx = 0;
+  function tryNext() {
+    if (idx >= candidates.length) return; // give up, placeholder stays
+    const url = candidates[idx++];
+    const probe = new Image();
+    probe.addEventListener('load', function () {
+      // Card might have been removed by a filter/sort change while the probe
+      // was in flight — bail silently rather than poking a detached element.
+      if (!displayedImg.parentNode) return;
+      displayedImg.src = url;
+      entry.cover = url; // modal & re-renders read entry.cover, not the img
+      setCoverInIndex(entry.alt || '', year, url);
+    }, { once: true });
+    probe.addEventListener('error', tryNext, { once: true });
+    probe.src = url;
   }
+  tryNext();
 }
 
 function reloadAll(data) {
@@ -971,7 +931,7 @@ function openModal(c) {
 
   card.innerHTML =
     '<button type="button" class="paf-modal-close" aria-label="Zamknij">×</button>' +
-    '<div class="paf-modal-cover"><img src="' + c.cover + '" alt="' + esc(c.alt) + '" data-year="' + (c._colliding && c._sortYear ? c._sortYear : '') + '"></div>' +
+    '<div class="paf-modal-cover"><img src="' + c.cover + '" alt="' + esc(c.alt) + '"></div>' +
     '<div class="paf-modal-info">' +
       '<h2 class="paf-modal-title">' + titleHtml(c.title, '') + '</h2>' +
       '<div class="paf-modal-rating"><img src="' + r.url + '" title="' + esc(r.title) + '" alt="' + ratingNum + '/5" width="100" height="31"></div>' +
@@ -980,10 +940,12 @@ function openModal(c) {
       (meta.length ? '<div class="paf-modal-meta">' + meta.join('') + '</div>' : '') +
     '</div>';
 
-  // Hook the cover's fallback chain so a missing modal poster degrades to
-  // .png/.webp/placeholder just like the card thumbnails.
+  // Probe the modal cover the same way the cards do: if entry.cover is still
+  // the placeholder (the card's probe hadn't finished before the user clicked),
+  // this finds the real poster and swaps it in; if entry.cover is already a
+  // real URL, the first probe candidate resolves from HTTP cache.
   const modalCover = card.querySelector('.paf-modal-cover img');
-  if (modalCover && !modalCover.complete) attachCoverFallback(modalCover, null);
+  if (modalCover) backgroundProbeCover(modalCover, c);
 
   modal.classList.add('open');
   document.body.style.overflow = 'hidden';

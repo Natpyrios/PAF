@@ -371,18 +371,6 @@ body {
   opacity: 1;
   transform: translateY(0);
 }
-/* Hide the <img> itself during the fallback chain walk. Parent opacity:0
-   already hides it visually, but a few browsers still paint the broken-image
-   indicator one frame ahead of the opacity rule when src is reset many times
-   in quick succession — that's the "flicker" symptom. visibility:hidden
-   keeps the layout box (so aspect-ratio is preserved) without ever painting
-   the broken state. */
-.card-fade img {
-  visibility: hidden;
-}
-.card-fade.card-shown img {
-  visibility: visible;
-}
 
 /* ---------- empty state ---------- */
 .brak {
