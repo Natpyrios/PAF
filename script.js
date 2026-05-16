@@ -14,14 +14,22 @@ const UNTYPED = '__no_type__';
 const UNTAGGED = '__no_tag__';
 const UNAGE = '__no_age__';
 
-// Live data source — Google Sheets via the gviz JSON endpoint. Picked over
-// `/export?format=csv` because gviz sends CORS headers consistently, whereas
-// the CSV export redirects through googleusercontent which can refuse the
-// cross-origin fetch from the browser. `range=A:S` clips off the footer/
-// summary columns (T+ — "Elementy folderu:", "Waga całkowita:" etc.) that
-// the sheet auto-populates but `rowToEntry` never reads.
-const SHEETS_GVIZ_URL = 'https://docs.google.com/spreadsheets/d/1CuHfluEd-9hVun6ANAeK41lNx949Aa_j0YVzWbgGIY8/gviz/tq?tqx=out:json&range=A:S';
-const CACHE_KEY    = 'paf_live_db_v11';
+// Live data source — Google Sheets `/export?format=csv` endpoint. Not gviz:
+// gviz **auto-types every column** at read time and silently drops any cell
+// whose value doesn't match the inferred type. Column F is the canonical
+// trap — most rows have plain years (2008, 2009...) so gviz types F as
+// Number, and year ranges like "2012-2013" come through as empty fields
+// regardless of output format (json/csv/html). `/export` is a flat CSV
+// dump of the displayed values, no typing — every cell arrives verbatim.
+//
+// CORS verified: the 307 redirect lands on googleusercontent.com with
+// `Access-Control-Allow-Origin: *`, so browser fetch resolves cleanly.
+// `range=A:S` clips off the footer/summary columns (T+) the sheet auto-
+// populates but the parser never reads. Empty-row filtering happens in
+// `rowToEntry` (returns null when NAZWA is empty) — no server-side query
+// support on this endpoint.
+const SHEETS_CSV_URL = 'https://docs.google.com/spreadsheets/d/1CuHfluEd-9hVun6ANAeK41lNx949Aa_j0YVzWbgGIY8/export?format=csv&range=A:S';
+const CACHE_KEY    = 'paf_live_db_v16';
 const CACHE_TTL_MS = 60 * 60 * 1000;
 
 const SHEET_COL = {
@@ -558,27 +566,11 @@ function wireSortControl() {
 }
 
 function rowToEntry(row) {
+  // CSV row — already an array of plain strings (each cell = displayed text).
+  // No type coercion to undo, no Date(…) serialisation to parse.
   function cell(i) {
-    const c = row && row.c && row.c[i];
-    if (!c) return '';
-    // Prefer the formatted display value (`f`) over the raw value (`v`):
-    // gviz returns time cells as "Date(1899,11,30,1,33,47)" in `v` but the
-    // pretty "1:33:47" in `f`; numbers like 3.98 GB come through as `f="3,98"`
-    // already locale-formatted with a comma — saves us re-formatting. But
-    // `f` can also come through as an **empty string** when Sheets can't
-    // format the cell (e.g. a year range "1997-1998" in a Date-formatted
-    // column) — fall through to `v` in that case so we don't drop the value
-    // entirely.
-    if (c.f != null && c.f !== '') return String(c.f).trim();
-    if (c.v == null) return '';
-    // When `f` is empty, `v` can still be a serialised Date — Sheets parsed
-    // the input, failed to format it, and we get "Date(1997,8,1)" rather than
-    // the text the user typed. Pull the year out so the title shows something
-    // recognisable instead of leaking the serialisation.
-    const raw = String(c.v).trim();
-    const dm = raw.match(/^Date\((-?\d+)/);
-    if (dm) return dm[1];
-    return raw;
+    const v = row && row[i];
+    return v == null ? '' : String(v).trim();
   }
 
   const nazwa = cell(SHEET_COL.NAZWA);
@@ -590,14 +582,16 @@ function rowToEntry(row) {
   // points at the actual folder ("Avatar: Legenda…" → "Avatar Legenda…").
   const seria    = seriaRaw.replace(/:/g, '');
   let   rok      = cell(SHEET_COL.ROK);
-  // ROK fallback: when column F is empty, pull the year range from the
-  // SERIA's "(YYYY)" / "(YYYY-YYYY)" suffix. The catalogue routinely leaves
-  // per-entry ROK blank on series-root rows (e.g. "13 Posterunek" the series,
-  // vs "13 Posterunek 2" the season) and stores the year range only on the
-  // series name in column D.
-  if (!rok) {
-    const m = seriaRaw.match(/\((\d{4}(?:\s*[-–—]\s*\d{4})?)\)\s*$/);
-    if (m) rok = m[1];
+  // ROK fallback. Column F has absolute priority — if it has anything in it,
+  // we use that. Only when F comes back empty AND this row is the series
+  // root (NAZWA equals SERIA without its "(YYYY)" suffix) do we pull the
+  // year range out of SERIA. For sub-entries like "Breaking Bad Sezon 5" in
+  // series "Breaking Bad (2008-2013)" the full-series range would falsely
+  // suggest the season spans the entire 5-year run, so we leave the year
+  // blank and let the user fill F if they want season-specific dates.
+  if (!rok && nazwa) {
+    const m = seriaRaw.match(/^(.*?)\s*\((\d{4}(?:\s*[-–—]\s*\d{4})?)\)\s*$/);
+    if (m && m[1].trim() === nazwa.trim()) rok = m[2];
   }
   const odc      = cell(SHEET_COL.ODC);
   const jezyk    = cell(SHEET_COL.LANGUAGE);
@@ -669,13 +663,41 @@ function rowToEntry(row) {
   return entry;
 }
 
+// RFC-4180-ish CSV parser. Handles quoted fields, escaped quotes (""), CRLF
+// and LF newlines, BOM. Good enough for what gviz emits — it always quotes
+// fields containing commas/quotes/newlines and uses \n line separators.
+function parseCSV(text) {
+  if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+  const rows = [];
+  let cur = [];
+  let field = '';
+  let inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuote) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuote = false;
+      } else field += c;
+    } else if (c === '"' && field === '') {
+      inQuote = true;
+    } else if (c === ',') {
+      cur.push(field); field = '';
+    } else if (c === '\n') {
+      cur.push(field); rows.push(cur); cur = []; field = '';
+    } else if (c !== '\r') {
+      field += c;
+    }
+  }
+  if (field !== '' || cur.length) { cur.push(field); rows.push(cur); }
+  return rows;
+}
+
 function parseGvizResponse(text) {
-  const start = text.indexOf('{');
-  const end   = text.lastIndexOf('}');
-  if (start === -1 || end === -1) throw new Error('unexpected gviz payload');
-  const json = JSON.parse(text.slice(start, end + 1));
-  if (!json.table || !json.table.rows) throw new Error('no table data in gviz response');
-  return json.table.rows.map(rowToEntry).filter(Boolean);
+  const rows = parseCSV(text);
+  if (rows.length === 0) throw new Error('empty CSV response');
+  // First row is the column header — drop it.
+  return rows.slice(1).map(rowToEntry).filter(Boolean);
 }
 
 // Cover index — remembers `alt → working URL` across sessions, so a card whose
@@ -766,7 +788,11 @@ async function loadData(forceFresh) {
     }
   }
   try {
-    const r = await fetch(SHEETS_GVIZ_URL);
+    // On a "Pobierz dane" click, the URL must change or the browser will
+    // happily serve the previous CSV out of its HTTP cache and we'd never
+    // see fresh edits. A timestamp query param is the most portable bust.
+    const url = forceFresh ? SHEETS_CSV_URL + '&_=' + Date.now() : SHEETS_CSV_URL;
+    const r = await fetch(url);
     if (!r.ok) throw new Error('HTTP ' + r.status);
     const text = await r.text();
     const entries = parseGvizResponse(text);
